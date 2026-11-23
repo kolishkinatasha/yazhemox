@@ -1,0 +1,9 @@
+# Dependencies
+node_modules/
+
+# React build output
+frontend/react/dist/
+
+# Local assets and caches
+.DS_Store
+*.log

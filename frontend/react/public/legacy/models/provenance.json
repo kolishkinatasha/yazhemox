@@ -1,0 +1,55 @@
+{
+  "pendant": {
+    "source": "02-_-_-_-__v3.stl",
+    "sha256": "fa993e0718a9f5355e0624f71c3f24778af555337f21b4f0428f67bc04e06d4b",
+    "originalVertices": 124276,
+    "originalTriangles": 248925,
+    "detail": {
+      "triangles": 38393,
+      "bytes": 616236
+    },
+    "room": {
+      "triangles": 6499,
+      "bytes": 137102
+    },
+    "holes": 0,
+    "sourceHeight": 45.91475982964039
+  },
+  "table": {
+    "source": "table-web.glb",
+    "sha256": "db6f572a7e98e452e5bca8a0ca0fa03614705f34e259ebc7416bfa8ee43224be",
+    "originalTriangles": 116820,
+    "detail": {
+      "triangles": 116820,
+      "bytes": 2011145
+    },
+    "room": {
+      "triangles": 21499,
+      "bytes": 555646
+    },
+    "sourceHeight": 0.5064789352472872,
+    "geometry": "authored",
+    "components": [
+      "Center_Metal",
+      "Paracord",
+      "Plywood_Dark"
+    ],
+    "upstreamSource": "стол.obj"
+  },
+  "lamp": {
+    "source": "03-fbx",
+    "sha256": "82bd4fb44ef6119f42562a169e31130c4e62c33f3274f610aa932cccd24a97c7",
+    "originalVertices": 491142,
+    "originalTriangles": 921602,
+    "detail": {
+      "triangles": 47993,
+      "bytes": 819222
+    },
+    "room": {
+      "triangles": 12000,
+      "bytes": 247725
+    },
+    "holes": 0,
+    "sourceHeight": 0.20549294352531433
+  }
+}
