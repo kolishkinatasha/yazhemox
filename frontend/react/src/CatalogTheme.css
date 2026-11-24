@@ -1,0 +1,16 @@
+:root {
+  --catalog-paper:#eee5cd;
+  --catalog-ink:#29291f;
+  --catalog-muted:#4e4736;
+  --catalog-rule:#a4916e;
+  --catalog-metal:#9b8259;
+  --catalog-dark:#282c24;
+  --catalog-control:#343d32;
+  --catalog-control-hover:#495441;
+  --catalog-header:linear-gradient(104deg,#384335,#252e27 72%);
+  --catalog-light:#f4e7c8;
+  --catalog-selection:#e4d7b3;
+  --catalog-oxide:#963727;
+  --catalog-oxide-hover:#74281d;
+  --catalog-mono:"Courier New",Courier,monospace;
+}

@@ -1,0 +1,151 @@
+/* The open catalogue shares the room's dark green ink and the colour of drawing paper. */
+.dock #browse {font-weight:650}
+#catalog-menu {
+  position:absolute;z-index:4;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%);
+  width:min(460px,100%);display:grid;grid-template-columns:1fr 1fr;gap:2px;
+  border:1px solid #607761;border-radius:6px;padding:8px;background:#22372e;color:#f7f4e8;
+  box-shadow:0 12px 40px #101d19aa
+}
+#catalog-menu[hidden] {display:none!important}
+#catalog-menu button {text-align:left;font-size:.91rem;padding:10px;border-radius:3px}
+#catalog-menu button:hover,#catalog-menu button:focus-visible {background:#405a48}
+
+#object-lettering {overflow:clip}
+#workshop>header {pointer-events:none}
+#workshop>header button {pointer-events:auto}
+@media(max-width:700px) {
+  .dock button {padding:12px 8px;min-height:40px}
+  #catalog-menu {bottom:calc(100% + 52px)}
+}
+
+#workshop :is(.dock,#catalog-menu) {
+  border-color:var(--catalog-metal);
+  border-radius:6px;
+  background:var(--catalog-header);
+  color:var(--catalog-light);
+}
+#workshop :is(.dock,#catalog-menu) button {
+  border-radius:4px;
+  color:inherit;
+  font-weight:650;
+}
+#workshop :is(.dock,#catalog-menu) button:hover {background:var(--catalog-control-hover)}
+#workshop .dock #browse[aria-expanded="true"] {
+  background:var(--catalog-selection);
+  color:var(--catalog-ink);
+}
+#workshop :is(#help,#room-switch,#zone-back,.top-actions button,#camera-panel button,#layout-panel button,.lettering-actions button,#help-close) {
+  border:1px solid var(--catalog-metal);
+  border-radius:5px;
+  background:var(--catalog-control);
+  color:var(--catalog-light);
+  font-weight:650;
+}
+#workshop :is(#help,#room-switch,#zone-back,.top-actions button,#camera-panel button,#layout-panel button,.lettering-actions button,#help-close):enabled:hover {
+  background:var(--catalog-control-hover);
+}
+#workshop :is(.dock button,#catalog-menu button,#help,#room-switch,#zone-back,.top-actions button,#camera-panel button,#layout-panel button,.lettering-actions button,#help-close):focus-visible {
+  outline:2px solid #f3c786;
+  outline-offset:2px;
+}
+
+.catalog-label-desktop,.help-label-desktop,.view-settings-toggle {display:none}
+.view-settings,#view-tools,.workshop-navigation {display:contents}
+
+@media(min-width:901px) {
+  #workshop > footer {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+    align-items:end;
+  }
+  .workshop-navigation {
+    position:relative;
+    grid-column:2;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  #workshop .top-actions [data-open="about"],
+  #workshop .catalog-label-mobile,
+  #workshop .help-label-mobile {display:none}
+  #workshop .help-label-desktop {display:inline}
+  #workshop .dock button {min-height:44px;padding:0 clamp(12px,1.4vw,20px);font-size:13px}
+  #workshop .workshop-navigation #help {
+    min-width:0;
+    width:auto;
+    min-height:44px;
+    padding:0 12px;
+    font-size:13px;
+  }
+  #workshop .workshop-navigation #help[aria-expanded="true"] {
+    background:var(--catalog-selection);
+    color:var(--catalog-ink);
+  }
+  #workshop #help-panel {
+    left:50%;
+    right:auto;
+    bottom:94px;
+    transform:translateX(-50%);
+  }
+  #workshop .catalog-label-desktop {display:inline;margin:0}
+  #workshop .dock #browse {
+    padding-inline:22px;
+    background:var(--catalog-selection);
+    color:var(--catalog-ink);
+  }
+  #workshop .dock #browse:hover {background:#f5e5c9}
+  #workshop #catalog-menu {
+    width:min(690px,calc(100vw - 64px));
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:12px;
+    max-height:calc(100dvh - 128px);
+    overflow:auto;
+    padding:15px;
+  }
+  .catalog-group + .catalog-group {border-left:1px solid #9b825975;padding-left:12px}
+  .catalog-group h2 {
+    margin:0 0 6px;
+    padding:0 9px;
+    color:#e4d7b3;
+    font-size:12px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+  }
+  .catalog-group button {display:block;width:100%;min-height:40px}
+  .view-settings {position:relative;display:block;pointer-events:auto}
+  #workshop:not(.layout-editing) .view-settings:has(#view-tools button:not([hidden])) .view-settings-toggle {
+    display:block;
+    min-height:40px;
+    padding:8px 12px;
+    font-size:13px;
+  }
+  #view-tools {
+    position:absolute;
+    z-index:5;
+    top:calc(100% + 7px);
+    right:0;
+    display:none;
+    min-width:145px;
+    padding:6px;
+    border:1px solid var(--catalog-metal);
+    border-radius:6px;
+    background:var(--catalog-header);
+    box-shadow:0 8px 20px #12170eb3;
+  }
+  .view-settings:has(.view-settings-toggle[aria-expanded="true"]) #view-tools {
+    display:grid;
+    gap:5px;
+  }
+  #workshop.layout-editing > header {right:calc(var(--layout-width) + 24px)}
+  #workshop.layout-editing > footer {display:none}
+  #workshop.layout-editing #view-tools {
+    position:static;
+    display:block;
+    min-width:0;
+    padding:0;
+    border:0;
+    background:transparent;
+    box-shadow:none;
+  }
+  #workshop #view-tools button {width:100%;padding:8px 10px;text-align:left}
+}

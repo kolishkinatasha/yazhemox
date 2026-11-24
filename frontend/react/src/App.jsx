@@ -1,42 +1,28 @@
-import { useEffect, useRef, useState } from 'react'
-import UniversalExhibitDialog from './UniversalExhibitDialog.jsx'
-import './App.css'
+import { useSyncExternalStore } from 'react'
+import ExhibitDialog from './ExhibitDialog.jsx'
+import { exhibitNavigation } from './workshop/exhibit-navigation.js'
 
-function App() {
-  const frameRef = useRef(null)
-  const [exhibitOpen, setExhibitOpen] = useState(false)
-  const [exhibitId, setExhibitId] = useState(null)
-  const [exhibitEntry, setExhibitEntry] = useState(null)
-  const [exhibitPhotos, setExhibitPhotos] = useState([])
+export default function App() {
+  const exhibit = useSyncExternalStore(exhibitNavigation.subscribe, exhibitNavigation.getSnapshot)
 
-  useEffect(() => {
-    const receiveMessage = (event) => {
-      if (event.data?.type !== 'yazhemoh:exhibit-open') return
-      setExhibitId(event.data.id)
-      setExhibitEntry(event.data.entry || null)
-      setExhibitPhotos(Array.isArray(event.data.photos) ? event.data.photos : [])
-      setExhibitOpen(true)
-    }
-    window.addEventListener('message', receiveMessage)
-    return () => window.removeEventListener('message', receiveMessage)
-  }, [])
-
-  const closeExhibit = (open) => {
-    setExhibitOpen(open)
-    if (!open) frameRef.current?.contentWindow?.postMessage({ type: 'yazhemoh:exhibit-close' }, '*')
-  }
-
-  return (
-    <main className="legacy-shell">
-      <iframe
-        ref={frameRef}
-        title="ЯЖЕМОХ — мастерская"
-        src="/legacy/index.html"
-        className="legacy-frame"
-      />
-      <UniversalExhibitDialog exhibitId={exhibitId} entry={exhibitEntry} photos={exhibitPhotos} open={exhibitOpen} onOpenChange={closeExhibit} />
-    </main>
+  return exhibit && (
+    <ExhibitDialog
+      key={exhibit.id}
+      exhibitId={exhibit.id}
+      entry={exhibit.entry}
+      photos={exhibit.photos}
+      research={exhibit.research}
+      researchSection={exhibit.section}
+      parentTitle={exhibit.parentTitle}
+      backLabel={exhibit.backLabel}
+      returningFrom={exhibit.returningFrom}
+      shelf={exhibit.shelf}
+      sceneExhibits={exhibit.sceneExhibits}
+      zoom={exhibit.zoom}
+      onExit={exhibitNavigation.exit}
+      onBack={exhibitNavigation.back}
+      onNavigate={exhibitNavigation.navigate}
+      onZoom={() => exhibitNavigation.navigate(exhibit.hash + '/photo')}
+    />
   )
 }
-
-export default App

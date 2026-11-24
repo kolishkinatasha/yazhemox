@@ -46,10 +46,10 @@ def main():
     parser.add_argument('--port', type=int, default=4173)
     parser.add_argument('--open', action='store_true', help='Open the site in the default browser.')
     args = parser.parse_args()
-    directory = Path(__file__).resolve().parent.parent / 'frontend' / 'dist'
+    directory = Path(__file__).resolve().parent.parent / 'frontend' / 'react' / 'dist'
     index = directory / 'index.html'
     if not index.is_file():
-        parser.exit(1, f'Cannot find {index}. Extract the entire project before starting it.\n')
+        parser.exit(1, f'Cannot find {index}. Build the site with npm --prefix frontend/react run build, or use a package that includes the build.\n')
     handler = partial(Handler, directory=str(directory))
     try:
         server = PreviewServer((HOST, args.port), handler)
