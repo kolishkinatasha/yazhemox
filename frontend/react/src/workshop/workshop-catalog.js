@@ -49,12 +49,12 @@ export const catalogue = {
       {
         title: 'Виброопоры для принтера',
         text: 'Опора для Bambu Lab A1 собирается из двух одинаковых печатных чашек и резинового шарика.',
-        action: {title:'Открыть на MakerWorld',href:makerModel,meta:'Модель и профиль печати'},
+        action: {title:'Профиль печати на MakerWorld',href:makerModel},
       },
       {
         title: 'Карандашница из шпунтов',
         text: 'Стенка собрана из повторяющихся изогнутых элементов. В 3D можно рассмотреть складки и форму основания, а в CAD-файле — исходную геометрию деталей.',
-        action: {title:'Скачать CAD-модель',href:'media/files/pencil-holder.step',meta:'STEP · 2,3 МБ',download:true},
+        action: {title:'Скачать исходник STEP',href:'media/files/pencil-holder.step',meta:'CAD-файл · 2,3 МБ',download:true},
       },
     ],
   },
@@ -74,8 +74,8 @@ export const catalogue = {
     title: 'Контакты', category: 'Мастерская ЯЖЕМОХ', model: 'contacts', modelLabel: 'Визитка мастерской',
     links: [{title:'@chubatov_iv',meta:'Telegram · личные сообщения',href:telegram},
       {title:'+7 905 542-99-41',href:'tel:+79055429941'},
-      {title:email,href:'mailto:'+email},
-      {title:'Канал ЯЖЕМОХ',meta:'Telegram',href:'https://t.me/chubatovcan'},
+      {title:email,href:'mailto:'+email}],
+    socialLinks: [{title:'Канал ЯЖЕМОХ',meta:'Telegram',href:'https://t.me/chubatovcan'},
       {title:'@yazhemoh',meta:'Instagram · фотографии работ',href:'https://www.instagram.com/yazhemoh/'}],
   },
 };

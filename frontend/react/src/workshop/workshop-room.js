@@ -963,8 +963,14 @@ function addSuspendedPendant(anchor, register) {
   const object = register(group(display, 0, .11, -.10), 'pendant', 'Кулон «Шухов»', 'desk');
   const height = .69;
   const eye = height / 2 + .044;
-  const sway = group(object, 0, .87, 0);
-  const suspension = group(sway, 0, -.87, 0);
+  const hangPoint = [-.043, .985, -.021];
+  const nail = group(object, ...hangPoint);
+  const iron = new T.MeshStandardMaterial({ color: '#665749', metalness: .58, roughness: .58 });
+  tube(nail, iron, [[.012, -.014, -.108], [0, 0, 0], [.012, .012, .043], [.026, .020, .069]], .012);
+  rod(nail, iron, [.024, .019, .064], [.029, .022, .074], .023);
+
+  const sway = group(object, ...hangPoint);
+  const suspension = group(sway, ...hangPoint.map(value => -value));
   const swivel = group(suspension, 0, eye, 0);
   const pendant = createProduct('pendant', height, { center: true });
   pendant.position.y = -eye;
@@ -972,7 +978,8 @@ function addSuspendedPendant(anchor, register) {
   pendant.traverse(part => {
     if (!part.isMesh) return;
     part.material = part.material.clone();
-    part.material.metalness *= .65;
+    part.material.color.lerp(new T.Color('#c8bda9'), .17);
+    part.material.metalness *= .53;
   });
   // The open lattice leaves gaps that a pointer ray can otherwise pass through.
   const hitArea = new T.Mesh(new T.CylinderGeometry(.16, .16, height, 12),
@@ -985,7 +992,7 @@ function addSuspendedPendant(anchor, register) {
 
   const cord = tube(suspension, material('#181717', .92), [
     [0, eye + .028, 0], [-.105, .53, .03], [-.159, .72, .015], [-.109, .91, -.012],
-    [-.043, .985, -.021], [.053, .933, -.017], [.123, .764, -.041], [.088, .565, -.022],
+    hangPoint, [.053, .933, -.017], [.123, .764, -.041], [.088, .565, -.022],
   ], .0115, true);
   const vertices = cord.geometry.attributes.position;
   const rest = vertices.array.slice();

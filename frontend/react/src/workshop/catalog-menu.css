@@ -1,4 +1,4 @@
-/* The open catalogue shares the room's dark green ink and the colour of drawing paper. */
+/* Navigation and interface controls sit above the 3D room. */
 .dock #browse {font-weight:650}
 #catalog-menu {
   position:absolute;z-index:4;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%);
@@ -11,6 +11,19 @@
 #catalog-menu button:hover,#catalog-menu button:focus-visible {background:#405a48}
 
 #object-lettering {overflow:clip}
+@media(min-width:1100px) {
+  #workshop:not(.zone-focused,.layout-editing,.lettering-editing) .scene-note {
+    display:block;
+    right:auto;
+    left:42px;
+    bottom:94px;
+    padding:5px 8px;
+    border-radius:4px;
+    background:#282c24c9;
+    color:var(--catalog-light);
+  }
+  .scene-note p {margin:0;font-size:12px}
+}
 #workshop>header {pointer-events:none}
 #workshop>header button {pointer-events:auto}
 @media(max-width:700px) {
@@ -35,7 +48,7 @@
   color:var(--catalog-ink);
 }
 #workshop :is(#help,#room-switch,#zone-back,.top-actions button,#camera-panel button,#layout-panel button,.lettering-actions button,#help-close) {
-  border:1px solid var(--catalog-metal);
+  border:0;
   border-radius:5px;
   background:var(--catalog-control);
   color:var(--catalog-light);
@@ -49,7 +62,7 @@
   outline-offset:2px;
 }
 
-.catalog-label-desktop,.help-label-desktop,.view-settings-toggle {display:none}
+.help-label-desktop,.view-settings-toggle {display:none}
 .view-settings,#view-tools,.workshop-navigation {display:contents}
 
 @media(min-width:901px) {
@@ -66,7 +79,6 @@
     gap:8px;
   }
   #workshop .top-actions [data-open="about"],
-  #workshop .catalog-label-mobile,
   #workshop .help-label-mobile {display:none}
   #workshop .help-label-desktop {display:inline}
   #workshop .dock button {min-height:44px;padding:0 clamp(12px,1.4vw,20px);font-size:13px}
@@ -87,31 +99,6 @@
     bottom:94px;
     transform:translateX(-50%);
   }
-  #workshop .catalog-label-desktop {display:inline;margin:0}
-  #workshop .dock #browse {
-    padding-inline:22px;
-    background:var(--catalog-selection);
-    color:var(--catalog-ink);
-  }
-  #workshop .dock #browse:hover {background:#f5e5c9}
-  #workshop #catalog-menu {
-    width:min(690px,calc(100vw - 64px));
-    grid-template-columns:repeat(3,minmax(0,1fr));
-    gap:12px;
-    max-height:calc(100dvh - 128px);
-    overflow:auto;
-    padding:15px;
-  }
-  .catalog-group + .catalog-group {border-left:1px solid #9b825975;padding-left:12px}
-  .catalog-group h2 {
-    margin:0 0 6px;
-    padding:0 9px;
-    color:#e4d7b3;
-    font-size:12px;
-    letter-spacing:.06em;
-    text-transform:uppercase;
-  }
-  .catalog-group button {display:block;width:100%;min-height:40px}
   .view-settings {position:relative;display:block;pointer-events:auto}
   #workshop:not(.layout-editing) .view-settings:has(#view-tools button:not([hidden])) .view-settings-toggle {
     display:block;
@@ -148,4 +135,63 @@
     box-shadow:none;
   }
   #workshop #view-tools button {width:100%;padding:8px 10px;text-align:left}
+}
+
+#workshop .dock #browse {
+  background:var(--catalog-selection);
+  color:var(--catalog-ink);
+}
+#workshop .dock #browse:hover {background:#f5e5c9}
+#workshop #catalog-menu {
+  width:min(740px,calc(100vw - 26px));
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:13px;
+  max-height:calc(100dvh - 128px);
+  overflow:auto;
+  padding:14px;
+  overscroll-behavior:contain;
+}
+.catalog-group + .catalog-group {border-left:1px solid #9b825975;padding-left:12px}
+.catalog-group h2 {
+  margin:0 0 5px;
+  padding:0 6px;
+  color:var(--catalog-selection);
+  font-size:12px;
+  line-height:1.35;
+  letter-spacing:.055em;
+  text-transform:uppercase;
+}
+#workshop .catalog-group button {
+  display:flex;
+  align-items:center;
+  gap:9px;
+  width:100%;
+  min-height:48px;
+  padding:5px 7px;
+  line-height:1.25;
+}
+.catalog-preview {
+  flex:none;
+  width:34px;
+  height:34px;
+  padding:2px 2px 5px;
+  border-radius:1px;
+  background:#e7ddc5;
+  object-fit:cover;
+}
+#workshop:not(.lettering-editing) .object-lettering:focus-visible,
+#workshop:not(.lettering-editing) .object-lettering:hover {color:#fff2ce;text-shadow:0 1px 4px #18130d,0 0 8px #18130d}
+@media (max-width:700px) {
+  #workshop #catalog-menu {
+    grid-template-columns:minmax(0,1fr);
+    gap:12px;
+    bottom:calc(100% + 10px);
+    max-height:min(65dvh,calc(100dvh - 100px));
+    padding:11px;
+  }
+  .catalog-group + .catalog-group {
+    border-left:0;
+    border-top:1px solid #9b825975;
+    padding:10px 0 0;
+  }
 }

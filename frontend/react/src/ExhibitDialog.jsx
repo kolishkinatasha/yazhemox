@@ -8,7 +8,7 @@ function ResourceLink({ link, action = false, primaryContact = false, onNavigate
   const internal = link.href.startsWith('#')
   const external = !link.download && /^(https?:|media\/)/.test(link.href)
   const href = link.href.startsWith('media/') ? `/${link.href}` : link.href
-  const Icon = link.download ? ArrowDown : internal ? ArrowRight : ArrowUpRight
+  const Icon = link.download ? ArrowDown : internal || !external ? ArrowRight : ArrowUpRight
 
   return (
     <a
@@ -60,6 +60,8 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
   const [photoRatio, setPhotoRatio] = useState(2 / 3)
   const activeTable = tables[tableIndex]
   const researchPage = research?.navigation.find((item) => item.id === researchSection)
+  const isContacts = exhibitId === 'contacts'
+  const isPurchasable = isTable || Boolean(entry?.order)
 
   useLayoutEffect(() => {
     const previous = previousResearch.current
@@ -154,14 +156,9 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
           }}
         >
           <header className="exhibit-header">
-            {researchPage || parentTitle ? (
-              <button type="button" className="research-back" onClick={onBack} aria-label={researchPage ? undefined : `Назад: ${parentTitle}`}>
-                <ArrowLeft size={18} aria-hidden="true" /> {backLabel}
-              </button>
-            ) : null}
             <Dialog.Title className="exhibit-heading">{entry.title}</Dialog.Title>
-            <button type="button" className="exhibit-close" onClick={onExit} aria-label="Вернуться в мастерскую">
-              <ArrowLeft size={18} aria-hidden="true" /><span>В мастерскую</span>
+            <button type="button" className="exhibit-exit" onClick={onExit}>
+              <ArrowLeft size={18} aria-hidden="true" /> В мастерскую
             </button>
           </header>
 
@@ -191,7 +188,7 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
                     if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.5) movePhoto(dx < 0 ? 1 : -1)
                   }}
                 >
-                  <div className="exhibit-print">
+                  <div className="exhibit-print" data-print-position={photoIndex % 4}>
                     <Dialog.Root open={zoom} onOpenChange={(open) => open ? onZoom() : onBack()}>
                       <Dialog.Trigger className="exhibit-photo" aria-label="Увеличить снимок">
                         <img src={`/${activePhoto.src}`} alt={activePhoto.alt || entry.title} onLoad={({ currentTarget }) => {
@@ -204,12 +201,14 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
                         <Dialog.Content className="exhibit-dialog exhibit-lightbox" aria-describedby={undefined} onKeyDown={handlePhotoKeys}>
                           <div className="exhibit-lightbox-bar">
                             <Dialog.Title className="exhibit-lightbox-title">Снимок {photoIndex + 1} из {gallery.length}</Dialog.Title>
-                            <Dialog.Close className="exhibit-close"><ArrowLeft size={18} aria-hidden="true" /> К описанию</Dialog.Close>
                           </div>
                           <img src={`/${activePhoto.src}`} alt={activePhoto.alt || entry.title} />
                           <div className="exhibit-lightbox-bar">
                             <button hidden={gallery.length < 2} type="button" aria-label="Предыдущий снимок" onClick={() => movePhoto(-1)}><ChevronLeft size={20} /></button>
-                            <p aria-live="polite">{activePhoto.caption}</p>
+                            <div className="exhibit-lightbox-caption">
+                              <p aria-live="polite">{activePhoto.caption}</p>
+                              <Dialog.Close className="exhibit-back"><ArrowLeft size={18} aria-hidden="true" /> К описанию</Dialog.Close>
+                            </div>
                             <button hidden={gallery.length < 2} type="button" aria-label="Следующий снимок" onClick={() => movePhoto(1)}><ChevronRight size={20} /></button>
                           </div>
                         </Dialog.Content>
@@ -256,7 +255,16 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
             </section>
 
             <article key={exhibitId} className="exhibit-copy" tabIndex={0} aria-label="Описание">
-              {entry.intro && !researchPage && <Dialog.Description className="exhibit-intro">{entry.intro}</Dialog.Description>}
+              {(researchPage || parentTitle) && (
+                <div className="exhibit-return">
+                  <button type="button" className="exhibit-back" onClick={onBack} aria-label={researchPage ? undefined : `${backLabel}: ${parentTitle}`}>
+                    <ArrowLeft size={18} aria-hidden="true" /> {backLabel}
+                  </button>
+                </div>
+              )}
+              {entry.intro && !researchPage && !isPurchasable && !research && !shelf && (
+                <Dialog.Description className="exhibit-intro">{entry.intro}</Dialog.Description>
+              )}
 
               {isTable && (
                 <section className="exhibit-variants">
@@ -339,19 +347,41 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
                 </nav>
               ))}
 
+              {entry.intro && !researchPage && (isPurchasable || research || shelf) && (
+                <Dialog.Description className="exhibit-intro exhibit-context">{entry.intro}</Dialog.Description>
+              )}
+
               {!research && entry.sections?.map((section) => (
                 <section className={section.action ? 'exhibit-section resource-group' : 'exhibit-section'} key={section.title}>
                   <h3>{section.title}</h3>
-                  <p>{section.text}</p>
                   {section.action && <ResourceLink link={section.action} action />}
+                  <p>{section.text}</p>
                 </section>
               ))}
 
-              {entry.links?.length > 0 && exhibitId !== 'prototypes' && (
-                <div className="resource-list">
-                  {entry.links.map((link, index) => <ResourceLink key={link.href} link={link} onNavigate={onNavigate} primaryContact={exhibitId === 'contacts' && index === 0} />)}
+              {isContacts && (
+                <div className="contact-directory">
+                  <section className="exhibit-section">
+                    <h3>Связаться с Иваном</h3>
+                    <div className="resource-list">
+                      {entry.links.map((link, index) => <ResourceLink key={link.href} link={link} primaryContact={index === 0} />)}
+                    </div>
+                  </section>
+                  <section className="exhibit-section">
+                    <h3>Работы и обновления</h3>
+                    <div className="resource-list">
+                      {entry.socialLinks.map((link) => <ResourceLink key={link.href} link={link} />)}
+                    </div>
+                  </section>
                 </div>
               )}
+
+              {!isContacts && entry.links?.length > 0 && exhibitId !== 'prototypes' && (
+                <div className="resource-list">
+                  {entry.links.map((link) => <ResourceLink key={link.href} link={link} onNavigate={onNavigate} />)}
+                </div>
+              )}
+
             </article>
           </div>
         </Dialog.Content>

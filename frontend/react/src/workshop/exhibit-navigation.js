@@ -109,11 +109,10 @@ export function bindExhibitMenu() {
     browse.setAttribute('aria-expanded', String(open))
   }
 
-  const desktop = matchMedia('(min-width: 901px)')
   const groups = [
-    ['На заказ', ['portfolio', 'firefly', 'pendant', 'generator']],
-    ['Для 3D-печати', ['printer', 'prototypes']],
-    ['Наука и автор', ['engineering', 'about', 'contacts']],
+    ['Предметы на заказ', ['portfolio', 'firefly', 'pendant', 'generator']],
+    ['Печать и макеты', ['printer', 'prototypes']],
+    ['Исследования и автор', ['engineering', 'about', 'contacts']],
   ]
 
   function makeButton(id) {
@@ -121,33 +120,31 @@ export function bindExhibitMenu() {
     const button = document.createElement('button')
     button.type = 'button'
     button.dataset.open = id
-    button.textContent = entry.title
+    const preview = (id === 'engineering' ? researchPhotos : photos[entry.album])?.[0]
+    if (preview) {
+      const image = document.createElement('img')
+      image.className = 'catalog-preview'
+      image.src = '/' + preview.src
+      image.alt = ''
+      image.width = 38
+      image.height = 38
+      image.loading = 'lazy'
+      button.append(image)
+    }
+    const title = document.createElement('span')
+    title.textContent = entry.title
+    button.append(title)
     return button
   }
 
-  function renderMenu() {
-    menu.replaceChildren()
-    if (!desktop.matches) {
-      menu.append(...Object.keys(catalogue).map(makeButton))
-      return
-    }
-    for (const [title, ids] of groups) {
-      const section = document.createElement('section')
-      section.className = 'catalog-group'
-      const heading = document.createElement('h2')
-      heading.textContent = title
-      section.append(heading, ...ids.map(makeButton))
-      menu.append(section)
-    }
+  for (const [title, ids] of groups) {
+    const section = document.createElement('section')
+    section.className = 'catalog-group'
+    const heading = document.createElement('h2')
+    heading.textContent = title
+    section.append(heading, ...ids.map(makeButton))
+    menu.append(section)
   }
-
-  renderMenu()
-  desktop.addEventListener('change', () => {
-    const restoreFocus = menu.contains(document.activeElement)
-    setOpen(false)
-    renderMenu()
-    if (restoreFocus) browse.focus()
-  })
 
   browse.addEventListener('click', () => {
     setOpen(menu.hidden)
