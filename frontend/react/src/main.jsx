@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './CatalogTheme.css'
+import './WorkshopPaper.css'
 import './workshop/room.css'
 import './workshop/catalog-menu.css'
 import './workshop/scene.js'

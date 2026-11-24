@@ -46,6 +46,7 @@ export function createLayoutEditor({ scene, camera, canvas, items, ceiling, getP
   const panel = document.querySelector('#layout-panel');
   const selection = document.querySelector('#layout-selection');
   const toggle = document.querySelector('#layout-toggle');
+  const close = panel.querySelector('#layout-close');
   const choices = panel.querySelector('#layout-item');
   const view = panel.querySelector('#layout-view');
   const focus = panel.querySelector('#layout-focus');
@@ -193,14 +194,13 @@ export function createLayoutEditor({ scene, camera, canvas, items, ceiling, getP
     selection.hidden = true;
     workshop.classList.toggle('layout-editing', active);
     toggle.setAttribute('aria-expanded', String(active));
-    toggle.textContent = active ? 'Готово' : 'Расстановка';
     canvas.tabIndex = active ? 0 : -1;
     canvas.style.cursor = active ? 'grab' : 'default';
     if (active) canvas.setAttribute('aria-label', 'Мастерская. Стрелки перемещают предмет, Q и E поворачивают');
     else canvas.removeAttribute('aria-label');
     onResize();
     const returnTarget = toggle.getClientRects().length ? toggle : toggle.closest('.view-settings')?.querySelector('.view-settings-toggle');
-    (active ? choices : returnTarget)?.focus({ preventScroll: true });
+    (active ? close : returnTarget)?.focus({ preventScroll: true });
   }
 
   function pose(width, height) {
@@ -319,6 +319,7 @@ export function createLayoutEditor({ scene, camera, canvas, items, ceiling, getP
   });
 
   toggle.addEventListener('click', () => setActive(!active));
+  close.addEventListener('click', () => setActive(false));
   choices.addEventListener('change', () => select(byId.get(choices.value)));
   view.addEventListener('change', onResize);
   focus.addEventListener('click', () => {
@@ -353,8 +354,9 @@ export function createLayoutEditor({ scene, camera, canvas, items, ceiling, getP
   redoButton.addEventListener('click', () => moveInHistory(future, history, 'after'));
   panel.querySelector('#layout-revert').addEventListener('click', () => edit(defaults.get(selected)));
   document.addEventListener('keydown', event => {
-    if (!active || document.querySelector('#detail').open) return;
+    if (!active || event.defaultPrevented || document.querySelector('[role="dialog"]')) return;
     if (event.key === 'Escape') {
+      event.preventDefault();
       event.stopPropagation();
       if (drag) endDrag(false);
       else setActive(false);

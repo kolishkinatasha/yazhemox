@@ -2,6 +2,7 @@ import * as T from 'three';
 import { createA1 } from './printer.js';
 import { createProduct } from './product-models.js';
 import { drawCork, leafTexture, random, texture, workshopMaterials } from './workshop-materials.js';
+import { addWorkshopCat } from './workshop-cat.js';
 import { cityTexture } from './workshop-city.js';
 import { roundedBoxGeometry } from './workshop-geometry.js';
 
@@ -1136,6 +1137,8 @@ export function buildWorkshop(scene, backdrop) {
   register(table, 'hyperline', 'Столик Hyperline');
   const chair = register(addChair(scene, desk, surfaces.chair, powderCoat), 'chair', 'Кресло');
 
+  const cat = addWorkshopCat(chair);
+
   const contacts = addContactShadows(scene);
   contacts.add(desk, 0, 0, 7.1, 3.2, .25);
   for (const x of [-2.99, 2.99]) {
@@ -1161,7 +1164,7 @@ export function buildWorkshop(scene, backdrop) {
   });
 
   return {
-    printer, pendant, window, editables, ceiling, poster,
+    printer, pendant, cat, window, editables, ceiling, poster,
     exhibits: { about: board, engineering: monitor, contacts: folder, prototypes: largeSample, generator: drawing, printer: printer.root },
     overviewObjects: [board, wallSketch, desk, shelf, table, chair, chandelier.shade],
     syncLayout() {
@@ -1200,6 +1203,7 @@ export function buildWorkshop(scene, backdrop) {
       { id: 'contacts', key: 'projects', object: folder, title: 'Контакты', edge: [[-.42, .04, .30], [.42, .04, .30]], side: 1, views: [null, 'desk'] },
       { id: 'desk', object: desk, title: 'Рабочий стол', edge: [[-3.1, 1.77, 1.17], [3.1, 1.77, 1.17]], at: .56, side: 1, views: [null] },
       { id: 'portfolio', key: 'hyperline', object: table, title: 'Hyperline', rim: { radius: [.415, .651], elevation: 1.252, gap: 9 }, views: [null, 'desk'] },
+      { id: 'cat', object: cat.object, title: 'Погладить кота', edge: [[-.3, -.14, -.44], [.3, -.14, -.44]], side: 1, rotation: 0, views: [null, 'desk'] },
       { id: 'shelf', object: shelf, title: 'Стеллаж', edge: [[-1.07, 1.9, .374], [-1.07, 3.96, .374]], at: .64, views: [null] },
       { id: 'firefly', object: firefly, title: 'Светлячок', rim: { radius: [.404, .404], elevation: .787, gap: 10 }, views: [null, 'shelf'] },
       { id: 'prototypes', object: largeSample, title: 'Макеты', edge: [[-.22, 0, .18], [.40, 0, .18]], side: 1, views: [null, 'shelf'] },

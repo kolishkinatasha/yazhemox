@@ -1,0 +1,67 @@
+/* The paper changes between exhibits. The title, controls and text stay on a common grid. */
+.workshop-paper:is(.exhibit-dialog[data-entry], .firefly-concept[data-concept="album"]) {
+  --sheet: #eee4ce;
+  --fold-light: #fff9e2e0;
+  --fold-shade: #84683755;
+  --fold-start: at 0 0;
+  --fold-end: at 100% 100%;
+  --cut-start: 30px 4px;
+  --cut-end: calc(100% - 35px) calc(100% - 4px);
+  --corners:
+    linear-gradient(138deg, transparent 27%, #fff9e7d6 31%, #c9af775c 47%, #765b3d75 50%, transparent 58%) left top / 50px 46px no-repeat,
+    linear-gradient(316deg, transparent 26%, #fff5d4a6 31%, #bea06b70 47%, #73583969 50%, transparent 60%) right bottom / 54px 47px no-repeat;
+  background:
+    url('/media/ui/paper-fibre.png') repeat,
+    var(--corners),
+    radial-gradient(ellipse 85px 22px at 22% 0, #866b414b, transparent 92%),
+    radial-gradient(ellipse 46px 82px at 100% 46%, #92734b61 4%, #fff9e07a 55%, transparent 91%),
+    radial-gradient(ellipse 72px 22px at 70% 100%, #9c7a484f 8%, #fff8dc80 62%, transparent 96%),
+    radial-gradient(ellipse 40px 93px at 0 69%, #96764b50 6%, #fff9e27a 56%, transparent 90%),
+    radial-gradient(ellipse 130px 95px var(--fold-start), var(--fold-light) 0%, transparent 86%),
+    radial-gradient(ellipse 160px 100px var(--fold-end), var(--fold-shade) 0%, transparent 90%),
+    var(--sheet);
+  clip-path: polygon(
+    var(--cut-start), 12% 1px, 18% 4px, 22% 9px, 26% 3px, 40% 0, 55% 3px, 74% 1px,
+    calc(100% - 14px) 2px, calc(100% - 4px) 7px, 100% 18px,
+    calc(100% - 2px) 29%, calc(100% - 5px) 40%, calc(100% - 11px) 46%,
+    calc(100% - 5px) 51%, 100% 65%, calc(100% - 3px) calc(100% - 34px),
+    var(--cut-end), 80% 100%, 73% calc(100% - 4px), 70% calc(100% - 8px), 64% calc(100% - 2px),
+    49% 100%, 31% calc(100% - 3px), 12% 100%, 7px calc(100% - 3px), 0 calc(100% - 18px),
+    3px 79%, 9px 70%, 4px 64%, 0 54%, 2px 37%, 1px 20%, 4px 29px
+  );
+}
+
+.workshop-paper.exhibit-dialog[data-entry="portfolio"] {
+  --sheet: #f0e5cc;
+  --fold-start: at 100% 0;
+  --fold-end: at 0 100%;
+  --cut-start: 22px 2px;
+  --cut-end: calc(100% - 39px) calc(100% - 3px);
+}
+
+.workshop-paper.exhibit-dialog:is([data-entry="engineering"], [data-entry="printer"], [data-entry="generator"]) {
+  --sheet: #eae8d7;
+  --fold-light: #fffef0aa;
+  --fold-shade: #777b552e;
+  --fold-start: at 100% 0;
+  --fold-end: at 0 100%;
+  --cut-start: 35px 1px;
+  --cut-end: calc(100% - 29px) calc(100% - 4px);
+}
+
+.workshop-paper.exhibit-dialog:is([data-entry="about"], [data-entry="contacts"], [data-entry="prototypes"], [data-entry="pendant"]) {
+  --sheet: #eddfc2;
+  --fold-light: #fff1d8bd;
+  --fold-shade: #a275422e;
+  --fold-start: at 0 100%;
+  --fold-end: at 100% 0;
+  --cut-start: 25px 5px;
+  --cut-end: calc(100% - 42px) calc(100% - 2px);
+}
+
+@media (max-width: 780px) {
+  .workshop-paper:is(.exhibit-dialog[data-entry], .firefly-concept[data-concept="album"]) {
+    --corners: linear-gradient(137deg, #fff9e7b0, transparent 75%) left top / 30px 30px no-repeat;
+    clip-path: none;
+  }
+}

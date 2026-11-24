@@ -1,0 +1,91 @@
+.photo-lightbox-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 102;
+  background: #191913e8;
+}
+
+.photo-lightbox {
+  position: fixed;
+  inset: max(8px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  z-index: 103;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: clamp(4px, 1.2vh, 12px);
+  color: #f4e9d3;
+}
+
+.photo-lightbox-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-inline: clamp(0px, 2vw, 32px);
+}
+
+.photo-lightbox-top h2 {
+  margin: 0;
+  font: 700 12px/1.4 var(--catalog-mono);
+  letter-spacing: .075em;
+  text-transform: uppercase;
+}
+
+.photo-lightbox-stage {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  container-type: size;
+}
+
+.photo-lightbox-print {
+  width: max-content;
+  max-width: 100%;
+  margin: 0;
+  padding: clamp(6px, 1vw, 13px);
+  background: #fbf5e7 url('/media/ui/paper-fibre.png');
+  color: #3f3027;
+  box-shadow: 0 14px 42px #1210078a;
+}
+
+.photo-lightbox-print img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: min(calc(100cqw - 2 * clamp(6px, 1vw, 13px)), 1120px);
+  max-height: max(65px, calc(100cqh - 77px));
+  margin-inline: auto;
+  object-fit: contain;
+}
+
+.photo-lightbox-print figcaption {
+  width: 0;
+  min-width: 100%;
+  margin-top: 7px;
+  padding-inline: 3px;
+  font: 400 clamp(16px, 2.2vw, 22px)/1.22 Pangolin, "Segoe Print", cursive;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.photo-lightbox-arrows {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.photo-lightbox button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 6px;
+  background: transparent;
+}
+
+.photo-lightbox:focus { outline: none }
+.photo-lightbox button:focus-visible { outline: 2px solid #e9d8b3; outline-offset: -2px }
+
+@media (hover: hover) {
+  .photo-lightbox button:hover { background: #f4e9d324 }
+}

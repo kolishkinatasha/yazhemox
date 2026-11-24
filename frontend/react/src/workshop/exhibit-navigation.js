@@ -110,9 +110,9 @@ export function bindExhibitMenu() {
   }
 
   const groups = [
-    ['Предметы на заказ', ['portfolio', 'firefly', 'pendant', 'generator']],
+    ['Предметы', ['portfolio', 'firefly', 'pendant', 'generator']],
     ['Печать и макеты', ['printer', 'prototypes']],
-    ['Исследования и автор', ['engineering', 'about', 'contacts']],
+    ['Исследования и автор', ['engineering', 'about']],
   ]
 
   function makeButton(id) {
@@ -120,20 +120,7 @@ export function bindExhibitMenu() {
     const button = document.createElement('button')
     button.type = 'button'
     button.dataset.open = id
-    const preview = (id === 'engineering' ? researchPhotos : photos[entry.album])?.[0]
-    if (preview) {
-      const image = document.createElement('img')
-      image.className = 'catalog-preview'
-      image.src = '/' + preview.src
-      image.alt = ''
-      image.width = 38
-      image.height = 38
-      image.loading = 'lazy'
-      button.append(image)
-    }
-    const title = document.createElement('span')
-    title.textContent = entry.title
-    button.append(title)
+    button.textContent = entry.title
     return button
   }
 
@@ -146,9 +133,9 @@ export function bindExhibitMenu() {
     menu.append(section)
   }
 
-  browse.addEventListener('click', () => {
+  browse.addEventListener('click', event => {
     setOpen(menu.hidden)
-    if (!menu.hidden) menu.querySelector('button')?.focus()
+    if (!menu.hidden && event.detail === 0) menu.querySelector('button')?.focus()
   })
   document.querySelector('#workshop').addEventListener('click', event => {
     const button = event.target.closest('button[data-open]')

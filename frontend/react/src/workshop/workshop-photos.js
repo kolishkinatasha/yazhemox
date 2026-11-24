@@ -10,7 +10,7 @@ export const photos = {
   ],
   lamp: [
     { src: "media/photos/firefly-blue.webp", caption: "Свет проходит по сетке", alt: "Светлячок в руке, голубые светящиеся линии пересекаются между двумя тёмными кольцами" },
-    { src: "media/photos/firefly-detail.webp", caption: "Световоды крупным планом", alt: "Пересекающиеся фиолетовые световоды рядом с пальцами руки" },
+    { src: "media/photos/firefly-detail.webp", landscape: true, caption: "Световоды крупным планом", alt: "Пересекающиеся фиолетовые световоды рядом с пальцами руки" },
     { src: "media/photos/firefly-day.webp", caption: "Светлячок при дневном свете", alt: "Небольшой настольный светильник с голубой сеткой и проводом на светлом фоне" },
     { src: "media/photos/firefly-pink.webp", caption: "Розовое свечение", alt: "Светильник в руке, на тёмном фоне видны розовый обод и фиолетовая сетка" },
   ],

@@ -7,10 +7,143 @@
   <meta name="description" content="Личная мастерская Ивана. Предметный дизайн, изобретения и инженерные расчёты.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <title>ЯЖЕМОХ — мастерская Ивана</title>
+  <style>
+    /* Keep the loading screen available before the application bundle. */
+    #scene-loading {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: grid;
+      place-content: center;
+      justify-items: center;
+      gap: 20px;
+      background: radial-gradient(ellipse at center, #424639 0%, #242a22 66%);
+      color: #eee2c7;
+      transition: opacity .3s ease;
+    }
+    #scene-loading.is-ready { opacity: 0; pointer-events: none }
+    #scene-loading p {
+      margin: 0;
+      font: 700 12px/1.4 "PT Mono", Consolas, "Courier New", monospace;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .loading-lamp {
+      display: grid;
+      place-items: center;
+      width: 150px;
+      height: 150px;
+      perspective: 450px;
+    }
+    .loading-lamp-body {
+      position: relative;
+      width: 92px;
+      height: 110px;
+      color: #a9e1dc;
+      transform-style: preserve-3d;
+      animation: loading-lamp-turn 4s linear infinite;
+    }
+    .loading-lamp-body::before,
+    .loading-lamp-body::after {
+      position: absolute;
+      inset: 50% 0 auto;
+      aspect-ratio: 1;
+      border: 2px solid currentColor;
+      border-radius: 50%;
+      background: #9bd6d51a;
+      box-shadow: 0 0 9px #a9e1dc77, inset 0 0 10px #a9e1dc55;
+      content: "";
+      transform: translateY(-50%) translateY(-55px) rotateX(90deg);
+    }
+    .loading-lamp-body::after {
+      transform: translateY(-50%) translateY(55px) rotateX(90deg);
+    }
+    .loading-lamp-strand {
+      position: absolute;
+      inset: 0;
+      transform-style: preserve-3d;
+      transform: rotateY(var(--angle)) translateZ(24px);
+    }
+    .loading-lamp-strand::before,
+    .loading-lamp-strand::after {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 1px;
+      height: 133px;
+      background: currentColor;
+      box-shadow: 0 0 4px #a9e1dc77;
+      content: "";
+      transform: translate(-50%, -50%) rotateZ(34deg);
+    }
+    .loading-lamp-strand::after { transform: translate(-50%, -50%) rotateZ(-34deg) }
+    @keyframes loading-lamp-turn {
+      from { transform: rotateX(-15deg) rotateY(0turn) }
+      to { transform: rotateX(-15deg) rotateY(1turn) }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #scene-loading { transition: none }
+      .loading-lamp-body { animation: none; transform: rotateX(-15deg) rotateY(20deg) }
+    }
+  </style>
 </head>
 <body class="night"><main id="workshop" aria-label="Интерактивная мастерская"><div id="scene"><div id="layout-selection" hidden aria-hidden="true"><span></span></div></div><div class="grain"></div>
-<header><h1 class="brand">ЯЖЕМОХ<span>ПРЕДМЕТЫ И ИДЕИ ИВАНА</span></h1><div id="zone-view" hidden><button type="button" id="zone-back"><span aria-hidden="true">←</span><span id="zone-back-label">Общий вид</span></button><h1 id="zone-title" aria-live="polite"></h1></div><div class="top-actions"><div class="view-settings"><button type="button" class="view-settings-toggle" aria-expanded="false" aria-controls="view-tools">Настройки вида</button><div id="view-tools"><button type="button" id="camera-toggle" aria-controls="camera-panel" aria-expanded="false" hidden>Камера</button><button type="button" id="layout-toggle" aria-controls="layout-panel" aria-expanded="false" hidden>Расстановка</button></div></div><button data-open="about">Об авторе <span>→</span></button></div></header>
-<div id="loading">Расставляю предметы<span></span></div><div id="scene-error" hidden>Не удалось открыть 3D-сцену. Все предметы доступны в меню внизу.</div>
+<header>
+  <h1 class="brand">ЯЖЕМОХ<span>ПРЕДМЕТЫ И ИДЕИ ИВАНА</span></h1>
+  <div id="zone-view" hidden>
+    <button type="button" id="zone-back"><span aria-hidden="true">←</span><span id="zone-back-label">К комнате</span></button>
+  </div>
+  <div class="top-actions">
+    <div class="view-settings">
+      <button type="button" class="view-settings-toggle" aria-label="Настройки вида" aria-expanded="false" aria-controls="view-tools">Вид</button>
+      <div id="view-tools">
+        <button type="button" id="camera-toggle" aria-controls="camera-panel" aria-expanded="false" hidden>Камера</button>
+        <button type="button" id="layout-toggle" aria-controls="layout-panel" aria-expanded="false" hidden>Расстановка</button>
+      </div>
+    </div>
+    <button type="button" id="help" aria-expanded="false" aria-controls="help-panel" aria-label="Помощь по мастерской" title="Помощь по мастерской">?</button>
+    <div id="help-backdrop" aria-hidden="true"></div>
+    <section id="help-panel" aria-labelledby="help-title" hidden>
+      <div class="help-heading">
+        <h2 id="help-title">Как осмотреться</h2>
+        <button type="button" id="help-close" aria-label="Закрыть справку">×</button>
+      </div>
+      <p>Нажмите на предмет или подпись, чтобы открыть карточку. Нажмите Esc, чтобы вернуться назад.</p>
+      <nav id="zone-list" aria-label="Быстрые переходы по комнате" hidden>
+        <button type="button" data-zone="desk">Рабочий стол</button>
+        <button type="button" data-zone="board">Пробковая доска</button>
+        <button type="button" data-zone="shelf">Стеллаж</button>
+        <div class="help-tools">
+          <button type="button" id="printer-toggle" aria-pressed="false" hidden>
+            <span>Анимация печати</span>
+            <span class="printer-toggle-state" aria-hidden="true">Выкл.</span>
+          </button>
+          <button type="button" id="lettering-start" aria-controls="lettering-tools" hidden>Расставить подписи</button>
+        </div>
+      </nav>
+    </section>
+  </div>
+</header>
+<div id="scene-loading" role="status">
+  <div class="loading-lamp" aria-hidden="true">
+    <div class="loading-lamp-body">
+      <span class="loading-lamp-strand" style="--angle: 0deg"></span>
+      <span class="loading-lamp-strand" style="--angle: 30deg"></span>
+      <span class="loading-lamp-strand" style="--angle: 60deg"></span>
+      <span class="loading-lamp-strand" style="--angle: 90deg"></span>
+      <span class="loading-lamp-strand" style="--angle: 120deg"></span>
+      <span class="loading-lamp-strand" style="--angle: 150deg"></span>
+      <span class="loading-lamp-strand" style="--angle: 180deg"></span>
+      <span class="loading-lamp-strand" style="--angle: 210deg"></span>
+      <span class="loading-lamp-strand" style="--angle: 240deg"></span>
+      <span class="loading-lamp-strand" style="--angle: 270deg"></span>
+      <span class="loading-lamp-strand" style="--angle: 300deg"></span>
+      <span class="loading-lamp-strand" style="--angle: 330deg"></span>
+    </div>
+  </div>
+  <p>Загружаем мастерскую</p>
+</div>
+<div id="scene-error" hidden>Не удалось открыть 3D-сцену. Все предметы доступны в меню внизу.</div>
 <svg id="object-halos" aria-hidden="true"><defs>
   <filter id="halo-glow" x="-60%" y="-60%" width="220%" height="220%" color-interpolation-filters="sRGB">
     <feGaussianBlur in="SourceAlpha" stdDeviation="3.2" result="soft"/>
@@ -24,9 +157,18 @@
   </mask>
 </defs></svg>
 <div id="object-lettering" role="group" aria-label="Подписи к предметам"></div>
-<div class="scene-note"><p>Выберите предмет в комнате</p></div>
-<footer><div class="coordinates">МОСКВА, РОССИЯ<br><span>ИНЖЕНЕРИЯ × ПРЕДМЕТНЫЙ ДИЗАЙН</span></div><div class="workshop-navigation"><nav class="dock" aria-label="Разделы мастерской"><button type="button" id="browse" aria-expanded="false" aria-controls="catalog-menu">Каталог</button><button data-open="portfolio">Мебель</button><button data-open="engineering">Наука</button><button data-open="contacts">Контакты</button></nav>
-<nav id="catalog-menu" aria-label="Каталог мастерской" hidden></nav><button type="button" id="help" aria-expanded="false" aria-controls="help-panel" aria-label="Помощь по мастерской"><span class="help-label-desktop">Помощь</span><span class="help-label-mobile" aria-hidden="true">?</span></button></div><button type="button" id="room-switch" data-target="shelf" hidden><span id="room-switch-arrow" aria-hidden="true">→</span><span id="room-switch-label">К стеллажу</span></button>
+<footer>
+  <div class="workshop-footer">
+    <nav class="workshop-navigation" aria-label="Разделы мастерской">
+      <div class="dock">
+        <button type="button" id="browse" aria-expanded="false" aria-controls="catalog-menu"><span class="catalog-icon" aria-hidden="true"></span>Каталог</button>
+        <button type="button" data-open="contacts">Контакты</button>
+      </div>
+      <div id="catalog-menu" role="group" aria-label="Каталог мастерской" hidden></div>
+    </nav>
+    <p class="workshop-signature">Мастерская Ивана · Москва, Россия</p>
+  </div>
+  <button type="button" id="room-switch" data-target="shelf" hidden><span id="room-switch-arrow" aria-hidden="true">→</span><span id="room-switch-label">К стеллажу</span></button>
 <div id="lettering-tools" role="group" aria-label="Расстановка подписей" hidden>
   <p id="lettering-status" role="status"></p>
   <div class="lettering-actions">
@@ -36,11 +178,10 @@
   </div>
 </div>
 </footer>
-<div id="help-panel" hidden><strong>Осмотритесь</strong><p>Нажмите на стол или стеллаж, чтобы рассмотреть их ближе. Предметы и подписи открывают разделы. Внутри можно листать фотографии и вращать модели мышью, пальцем или стрелками на клавиатуре. Клавиша Esc возвращает на предыдущий вид.</p><nav id="zone-list" aria-label="Управление мастерской" hidden><button type="button" data-zone="desk">Рабочий стол</button><button type="button" data-zone="board">Пробковая доска</button><button type="button" data-zone="shelf">Стеллаж</button><button type="button" id="printer-toggle" aria-pressed="false">Анимация печати</button></nav><button type="button" id="lettering-start" aria-controls="lettering-tools" hidden>Расставить подписи</button><button id="help-close">Понятно →</button></div>
 <aside id="camera-panel" aria-labelledby="camera-title" hidden>
-  <div class="camera-heading">
+  <div class="settings-heading">
     <h2 id="camera-title">Настройки камеры</h2>
-    <button type="button" id="camera-close" aria-label="Закрыть настройки камеры">×</button>
+    <button type="button" id="camera-close" class="settings-close" aria-label="Закрыть настройки камеры">×</button>
   </div>
   <div class="camera-field"><label for="camera-zoom">Масштаб объектива</label><output for="camera-zoom"></output><input id="camera-zoom" data-camera="zoom" type="range" min="75" max="135" step="1" value="100"></div>
   <div class="camera-field"><label for="camera-exposure">Экспозиция</label><output for="camera-exposure"></output><input id="camera-exposure" data-camera="exposure" type="range" min="-1.25" max="1.25" step=".05" value="0"></div>
@@ -63,7 +204,10 @@
   <p id="camera-status" role="status"></p>
 </aside>
 <aside id="layout-panel" aria-labelledby="layout-title" hidden>
-  <h2 id="layout-title">Расстановка</h2>
+  <div class="settings-heading">
+    <h2 id="layout-title">Расстановка</h2>
+    <button type="button" id="layout-close" class="settings-close" aria-label="Закрыть расстановку">×</button>
+  </div>
   <label for="layout-view">Ракурс</label>
   <div class="layout-row"><select id="layout-view"><option value="current">Текущий</option><option value="angle">Под углом</option><option value="top">Сверху</option><option value="front">Спереди</option></select><button type="button" id="layout-focus">К предмету</button></div>
   <label for="layout-item">Предмет</label>

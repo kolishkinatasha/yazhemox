@@ -11,7 +11,7 @@ import { createCameraSettings } from './camera-settings.js';
 import { createCameraEffects } from './camera-effects.js';
 import { createWorkshopLettering } from './workshop-lettering.js';
 import { createLetteringEditor } from './lettering-editor.js';
-let printer,printing=!matchMedia('(prefers-reduced-motion: reduce)').matches,printSeconds=15,lastPrintFrame=0;
+let cat, printer,printing=!matchMedia('(prefers-reduced-motion: reduce)').matches,printSeconds=15,lastPrintFrame=0;
 let pendant, pendantSeconds = 0;
 let software=false, dirty=true;
 function makeRenderer() {
@@ -32,7 +32,7 @@ overviewCamera.lookAt(overviewTarget);
 overviewCamera.updateMatrixWorld();
 const brand = $('.brand');
 const workshopPage = $('#workshop');
-const zoneView = $('#zone-view'), zoneBack = $('#zone-back'), zoneTitle = $('#zone-title');
+const zoneView = $('#zone-view'), zoneBack = $('#zone-back');
 const roomSwitch = $('#room-switch');
 const halos = createObjectHalos($('#object-halos'));
 const letteringLayer = $('#object-lettering');
@@ -83,7 +83,7 @@ function createRoom(backdrop) {
 
   const workshop = buildWorkshop(scene, backdrop);
   exhibitNavigation.setSceneExhibits(workshop.exhibits);
-  ({ printer, pendant, window: cityWindow, overviewObjects, poster } = workshop);
+  ({ printer, pendant, cat, window: cityWindow, overviewObjects, poster } = workshop);
   courtyardMaterial = scene.getObjectByName('courtyard').material;
   if (!software) cameraEffects = createCameraEffects(renderer, scene);
   const ambient = new T.HemisphereLight('#ddd9e4', '#9e8474', .68);
@@ -103,6 +103,7 @@ function createRoom(backdrop) {
     halos.add(id, object, { curved });
   }
   for (const inscription of workshop.lettering) lettering.add(inscription);
+  attach(cat.object, 'cat');
   scene.traverse(object => {
     if (object.isMesh && (!object.material.transparent || object.userData.pickOnly)) pickMeshes.push(object);
   });
@@ -110,7 +111,8 @@ function createRoom(backdrop) {
   $('#lettering-start').hidden = false;
   printerToggle.onclick = togglePrinting;
   updatePrintState();
-  if (software) renderer.setDynamicRoots(printer.root, pendant.object, cityWindow.particles);
+  printerToggle.hidden = false;
+  if (software) renderer.setDynamicRoots(printer.root, pendant.object, cityWindow.particles, cat.object);
   layoutEditor = createLayoutEditor({
     scene, camera, canvas: renderer.domElement, items: workshop.editables, ceiling: workshop.ceiling,
     getPose: currentRoomPose,
@@ -147,8 +149,6 @@ function createRoom(backdrop) {
   renderer.domElement.addEventListener('pointermove', hover);
   renderer.domElement.addEventListener('pointerleave', () => highlightAction());
   renderer.domElement.addEventListener('click', pick);
-  $('#loading').style.opacity = 0;
-  setTimeout(() => $('#loading')?.remove(), 600);
   startSeasonalCourtyard();
   animate();
 }
@@ -307,9 +307,7 @@ function updateRoomNavigation() {
   zoneView.hidden = !zone;
   zoneView.classList.toggle('compact', canSwitch);
   zoneBack.hidden = canSwitch;
-  $('#zone-back-label').textContent = narrowRoom.matches ? 'К столу' : 'Общий вид';
-  const name = zone?.button.textContent ?? '';
-  if (zoneTitle.textContent !== name) zoneTitle.textContent = name;
+  $('#zone-back-label').textContent = narrowRoom.matches ? 'К столу' : 'К комнате';
 
   roomSwitch.hidden = !canSwitch || Boolean(layoutEditor?.active);
   if (canSwitch) {
@@ -438,19 +436,29 @@ function highlightAction(object) {
 }
 
 function hover(event) {
-  if (event.pointerType !== 'touch' && !current && !layoutEditor?.active && !letteringEditor.active) {
-    highlightAction(intersect(event));
+  if (current || layoutEditor?.active || letteringEditor.active) return;
+  const hit = intersect(event);
+  if (event.pointerType === 'touch') {
+    if (hit?.userData.action === 'cat' && event.buttons) cat.pet();
+  } else if (hit?.userData.action === 'cat') {
+    if (event.movementX || event.movementY) cat.pet();
+    renderer.domElement.style.cursor = 'grab';
+    halos.highlight();
+  } else {
+    highlightAction(hit);
   }
 }
 
 function activateRoomObject(id) {
   if (letteringEditor.active) return;
-  if (zones.has(id)) setRoomZone(id);
+  if (id === 'cat') cat.pet();
+  else if (zones.has(id)) setRoomZone(id);
   else if (id) exhibitNavigation.open(id);
 }
 
 function pick(event) {
-  if (!layoutEditor?.active) activateRoomObject(intersect(event)?.userData.action);
+  if (layoutEditor?.active || letteringEditor.active) return;
+  activateRoomObject(intersect(event)?.userData.action);
 }
 
 zoneBack.onclick = () => setRoomZone(null);
@@ -465,7 +473,7 @@ addEventListener('keydown', event => {
 });
 function updatePrintState() {
   printerToggle.setAttribute('aria-pressed', String(printing));
-
+  printerToggle.querySelector('.printer-toggle-state').textContent = printing ? 'Вкл.' : 'Выкл.';
 }
 function togglePrinting() {
   printing = !printing;
@@ -474,6 +482,12 @@ function togglePrinting() {
   dirty = true;
 }
 let lastFrame=0;
+let finishSceneLoading = () => {
+  const loading = $('#scene-loading');
+  loading.classList.add('is-ready');
+  setTimeout(() => loading.remove(), 350);
+};
+
 function animate(time=0){requestAnimationFrame(animate);if(document.hidden || (current && !dirty)){lastPrintFrame=time;return;}const dt=Math.max(0,Math.min(.25,(time-lastPrintFrame)/1000));lastPrintFrame=time;
  updateCameraMove(time);
  const canPrint = printing && !current && !layoutEditor?.active;
@@ -481,17 +495,22 @@ function animate(time=0){requestAnimationFrame(animate);if(document.hidden || (c
  const canSway = !reduce && !current && !layoutEditor?.active && (!zone || zone === 'desk');
  if(canPrint)printSeconds+=dt;
  if (canSway) pendantSeconds += dt;
+ const catMoved = !current && !layoutEditor?.active && cat.update(dt, !reduce);
  const sceneTick=!software||dirty||time-lastFrame>140;
  if (sceneTick) {
    if (canPrint) printer.update(printSeconds);
    if (canSway) pendant.update(pendantSeconds);
-   if (canPrint || canSway) renderer.shadowMap.needsUpdate = true;
+   if (canPrint || canSway || catMoved) renderer.shadowMap.needsUpdate = true;
    const movingOutside = !reduce && !current && !layoutEditor?.active && cityWindow.update(time, camera);
-   if (!software || dirty || canPrint || canSway || movingOutside) {
+   if (!software || dirty || canPrint || canSway || catMoved || movingOutside) {
      if (cameraEffects && !layoutEditor?.active) {
        const settings = cameraSettings.settings;
        cameraEffects.render(camera, settings, cameraFocus(settings));
      } else renderer.render(scene, camera);
+     if (finishSceneLoading) {
+       finishSceneLoading();
+       finishSceneLoading = null;
+     }
      if (layoutEditor?.active) layoutEditor.projectSelection();
      else updateSceneOverlay();
      dirty = false;
@@ -530,6 +549,7 @@ viewToggle.addEventListener('click', () => {
 });
 document.addEventListener('click', event => {
   if (!viewMenu.contains(event.target) || event.target.closest('#view-tools button')) setViewMenu(false);
+  if (!event.target.closest('#help, #help-panel') && !$('#help-panel').hidden) setHelpOpen(false);
 });
 document.addEventListener('keydown', event => {
   if (event.key !== 'Escape' || viewToggle.getAttribute('aria-expanded') !== 'true') return;
@@ -538,15 +558,17 @@ document.addEventListener('keydown', event => {
   viewToggle.focus();
 }, true);
 $('#help').onclick = () => setHelpOpen($('#help-panel').hidden);
-$('#help-close').onclick = () => { setHelpOpen(false); $('#help').focus(); };
-$('#browse').addEventListener('click', () => setHelpOpen(false));
+$('#help-backdrop').onclick = $('#help-close').onclick = () => {
+  setHelpOpen(false);
+  $('#help').focus();
+};
 syncExhibit();
 addEventListener('resize',resize);
 Promise.all([loadRoomModels(),loadEveningBackdrop()])
   .then(([,backdrop]) => createRoom(backdrop))
   .catch(error => {
     console.error(error);
-    $('#loading')?.remove();
+    $('#scene-loading')?.remove();
     $('#scene-error').hidden = false;
     exhibitNavigation.setSceneExhibits(null);
   });
