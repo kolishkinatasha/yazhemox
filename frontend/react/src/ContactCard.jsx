@@ -4,7 +4,7 @@ import { Camera, Megaphone, Send, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useResearchMonitorLayout } from './ResearchMonitor.jsx'
 import { catalogue } from './workshop/workshop-catalog.js'
-import { exhibitNavigation } from './workshop/exhibit-navigation.js'
+import { exhibitNavigation, roomIndexControl } from './workshop/exhibit-navigation.js'
 import { surfaceControlAt, setSurfaceImage, setSurfacePreview } from './workshop/scene.js'
 import { captureSurface } from './workshop/surface-capture.js'
 import './ContactCard.css'
@@ -121,7 +121,7 @@ export default function ContactCard({ exhibits }) {
             const previous = opener.current
             const target = previous instanceof HTMLElement && previous !== document.body && previous.getClientRects().length
               ? previous
-              : document.getElementById('workshop-contacts')
+              : roomIndexControl('contacts')
             target?.focus({ preventScroll: true })
           }}
         >

@@ -1,18 +1,18 @@
 import { createPortal } from 'react-dom'
 import * as Dialog from '@radix-ui/react-dialog'
-import { ArrowLeft, ArrowRight, ArrowUpRight, X } from 'lucide-react'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { ArrowRight, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { useResearchMonitorLayout } from './ResearchMonitor.jsx'
 import { catalogue } from './workshop/workshop-catalog.js'
 import { photos } from './workshop/workshop-photos.js'
 import { drawCork } from './workshop/workshop-materials.js'
-import { exhibitNavigation } from './workshop/exhibit-navigation.js'
+import { exhibitNavigation, roomIndexControl } from './workshop/exhibit-navigation.js'
 import { surfaceControlAt, setSurfaceImage, setSurfacePreview } from './workshop/scene.js'
 import { captureSurface } from './workshop/surface-capture.js'
 import './AuthorBoard.css'
 
 const entry = catalogue.about
-const [researchLink, contactLink] = entry.links
+const [researchLink] = entry.links
 const album = photos.about
 const host = document.getElementById('author-board-display')
 let corkBackground
@@ -29,7 +29,6 @@ function corkStyle() {
 }
 
 function readPins(screen) {
-  if (screen.querySelector('.author-photo-view')) return []
   const surface = screen.getBoundingClientRect()
   const positions = []
   for (const marker of screen.querySelectorAll('[data-board-pin]')) {
@@ -46,13 +45,12 @@ function PinMarker({ index }) {
   return <span className="author-pin-marker" data-board-pin={index} aria-hidden="true" />
 }
 
-function BoardPhoto({ photo, className, onClick, pin }) {
+function BoardPhoto({ photo, className, pin }) {
   return (
     <figure className={`author-pin author-photo ${className}`}>
       <PinMarker index={pin} />
-      <button type="button" onClick={onClick} aria-label={`Увеличить фото «${photo.caption}»`}>
-        <img src={`/${photo.src}`} alt={photo.alt} />
-      </button>
+      <div className="author-photo-print" role="img" aria-label={photo.alt}
+        style={{ backgroundImage: `url("/${photo.src}")` }} />
     </figure>
   )
 }
@@ -69,16 +67,15 @@ function BoardLink({ link, onNavigate, className, children }) {
   )
 }
 
-function BoardContents({ titleRef, onPhoto, onNavigate, onClose }) {
+function BoardContents({ titleRef, onNavigate, onClose }) {
   return (
     <>
       <div className="author-board-left">
-        <BoardPhoto className="author-portrait" photo={album[0]} pin={0} onClick={onPhoto && (() => onPhoto(0))} />
-        <BoardLink link={contactLink} onNavigate={onNavigate} className="author-pin author-logo-note">
+        <BoardPhoto className="author-portrait" photo={album[0]} pin={0} />
+        <div className="author-pin author-logo-note">
           <PinMarker index={5} />
           <img src="/media/ui/yazhemoh-mark.svg" width="720" height="528" alt="ЯЖЕМОХ" />
-          <span>Связаться <ArrowUpRight size={13} aria-hidden="true" /></span>
-        </BoardLink>
+        </div>
       </div>
       <article className="author-pin author-intro">
         <PinMarker index={1} />
@@ -87,7 +84,7 @@ function BoardContents({ titleRef, onPhoto, onNavigate, onClose }) {
           : <h2>{entry.title}</h2>}
         <p>{entry.intro}</p>
         <BoardLink link={researchLink} onNavigate={onNavigate} className="author-note-link">
-          Научные работы <ArrowUpRight size={15} aria-hidden="true" />
+          Научные работы <ArrowRight size={15} aria-hidden="true" />
         </BoardLink>
       </article>
       <article className="author-pin author-name-note">
@@ -95,12 +92,15 @@ function BoardContents({ titleRef, onPhoto, onNavigate, onClose }) {
         <h3>{entry.sections[0].title}</h3>
         <p>{entry.sections[0].text}</p>
       </article>
-      <BoardPhoto className="author-work-picture" photo={album[1]} pin={3} onClick={onPhoto && (() => onPhoto(1))} />
+      <BoardPhoto className="author-work-picture" photo={album[1]} pin={3} />
       <article className="author-pin author-work-note">
         <PinMarker index={4} />
         <h3>{entry.sections[1].title}</h3>
         <p>{entry.sections[1].text}</p>
       </article>
+      <div className="author-board-side">
+        <BoardPhoto className="author-side-photo" photo={album[2]} pin={6} />
+      </div>
       <button className="author-board-close" type="button" onClick={onClose} aria-label="Вернуться в мастерскую">
         <X size={20} aria-hidden="true" />
       </button>
@@ -127,11 +127,9 @@ export function AuthorBoardPreview() {
 }
 
 export default function AuthorBoard({ exhibit }) {
-  const { zoom, sceneExhibits } = exhibit
+  const { sceneExhibits } = exhibit
   const [screen, setScreen] = useState(null)
-  const [index, setIndex] = useState(0)
   const title = useRef(null)
-  const zoomClose = useRef(null)
   const opener = useRef(null)
   const hovered = useRef(null)
 
@@ -139,25 +137,11 @@ export default function AuthorBoard({ exhibit }) {
     if (screen && sceneExhibits) return captureSurface(screen, canvas => setSurfaceImage('about', canvas, readPins(screen)))
   }, [screen, sceneExhibits])
 
-  useLayoutEffect(() => {
-    if (zoom) zoomClose.current?.focus({ preventScroll: true })
-    else title.current?.focus({ preventScroll: true })
-  }, [zoom])
-
   function setHover(control) {
     if (hovered.current === control) return
     hovered.current?.removeAttribute('data-board-hover')
     hovered.current = control
     control?.setAttribute('data-board-hover', '')
-  }
-
-  function openPhoto(nextIndex) {
-    setIndex(nextIndex)
-    exhibitNavigation.navigate('#about/photo')
-  }
-
-  function movePhoto(direction) {
-    setIndex(current => (current + direction + album.length) % album.length)
   }
 
   return (
@@ -188,8 +172,7 @@ export default function AuthorBoard({ exhibit }) {
           onOpenAutoFocus={event => {
             opener.current = document.activeElement
             event.preventDefault()
-            const target = zoom ? zoomClose.current : title.current
-            target?.focus({ preventScroll: true })
+            title.current?.focus({ preventScroll: true })
           }}
           onCloseAutoFocus={event => {
             event.preventDefault()
@@ -197,30 +180,13 @@ export default function AuthorBoard({ exhibit }) {
             const previous = opener.current
             const target = previous instanceof HTMLElement && previous !== document.body && previous.getClientRects().length
               ? previous
-              : document.getElementById('browse')
+              : roomIndexControl('about')
             target?.focus({ preventScroll: true })
           }}
         >
-          <div className="author-board-pins" inert={zoom ? '' : undefined} aria-hidden={zoom || undefined}>
-            <BoardContents titleRef={zoom ? undefined : title} onPhoto={openPhoto} onNavigate={exhibitNavigation.navigate} onClose={exhibitNavigation.exit} />
+          <div className="author-board-pins">
+            <BoardContents titleRef={title} onNavigate={exhibitNavigation.navigate} onClose={exhibitNavigation.exit} />
           </div>
-          {zoom && (
-            <div className="author-photo-view" onKeyDown={event => {
-              if (['ArrowLeft', 'ArrowRight'].includes(event.key)) {
-                event.preventDefault()
-                movePhoto(event.key === 'ArrowLeft' ? -1 : 1)
-              }
-            }}>
-              <Dialog.Title className="author-photo-title">{album[index].caption}</Dialog.Title>
-              <div className="author-photo-stage"><img src={`/${album[index].src}`} alt={album[index].alt} /></div>
-              <div className="author-photo-actions">
-                <button type="button" onClick={() => movePhoto(-1)} aria-label="Предыдущее фото"><ArrowLeft size={20} aria-hidden="true" /></button>
-                <span aria-live="polite">{index + 1} из {album.length}</span>
-                <button type="button" onClick={() => movePhoto(1)} aria-label="Следующее фото"><ArrowRight size={20} aria-hidden="true" /></button>
-              </div>
-              <button ref={zoomClose} className="author-board-close" type="button" onClick={exhibitNavigation.back} aria-label="Закрыть фото"><X size={20} aria-hidden="true" /></button>
-            </div>
-          )}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

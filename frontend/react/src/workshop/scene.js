@@ -1,6 +1,6 @@
 import * as T from 'three';
 import { SoftwareRenderer } from './software-renderer.js';
-import { buildWorkshop } from './workshop-room.js';
+import { buildWorkshop, loadPackingMark } from './workshop-room.js';
 import { exhibitNavigation, researchMonitorLayout } from './exhibit-navigation.js';
 import { loadRoomModels } from './product-models.js';
 import { createLayoutEditor } from './layout-editor.js';
@@ -13,6 +13,7 @@ import { createWorkshopLettering } from './workshop-lettering.js';
 import { createLetteringEditor } from './lettering-editor.js';
 let cat, printer,printing=!matchMedia('(prefers-reduced-motion: reduce)').matches,printSeconds=15,lastPrintFrame=0;
 let pendant, pendantSeconds = 0;
+let coffee, steamSeconds = .4;
 let software=false, dirty=true;
 function makeRenderer() {
   try { return new T.WebGLRenderer({antialias:true, powerPreference:'high-performance'}); }
@@ -70,6 +71,10 @@ function syncExhibit() {
   const surface = focusedSurface();
   if (camera && (previous?.mesh || surface?.mesh)) {
     if (previous?.mesh) restoreSurface(previous);
+    if (surface?.deferPreview) {
+      surface.deferPreview = false;
+      showSurface(surface, surface.preview);
+    }
     workshopPage.classList.toggle('surface-focused', Boolean(surface));
     surface?.host.toggleAttribute('data-approaching', !reduce && !software);
     const pose = surface ? surfacePose(surface, innerWidth, innerHeight) : roomPose(innerWidth, innerHeight);
@@ -92,7 +97,7 @@ function attach(object, id) {
   });
 }
 
-function createRoom(backdrop) {
+function createRoom(backdrop, mark) {
   scene = new T.Scene();
   scene.background = new T.Color(roomBackground);
   scene.fog = new T.Fog(roomBackground, 22, 45);
@@ -106,14 +111,14 @@ function createRoom(backdrop) {
   renderer.toneMapping = T.ACESFilmicToneMapping;
   $('#scene').append(renderer.domElement);
 
-  const workshop = buildWorkshop(scene, backdrop);
+  const workshop = buildWorkshop(scene, backdrop, mark);
   for (const [id, surface] of Object.entries(exhibitSurfaces)) {
     surface.mesh = workshop.exhibits[id].getObjectByName(surface.name);
     surface.idleMap = surface.mesh.material.map;
     surface.pins = surface.mesh.getObjectByName('author-pin-hardware');
   }
   exhibitNavigation.setSceneExhibits(workshop.exhibits);
-  ({ printer, pendant, cat, window: cityWindow, overviewObjects, poster } = workshop);
+  ({ printer, pendant, cat, coffee, window: cityWindow, overviewObjects, poster } = workshop);
   courtyardMaterial = scene.getObjectByName('courtyard').material;
   if (!software) cameraEffects = createCameraEffects(renderer, scene);
   const ambient = new T.HemisphereLight('#ddd9e4', '#9e8474', .68);
@@ -142,7 +147,7 @@ function createRoom(backdrop) {
   printerToggle.onclick = togglePrinting;
   updatePrintState();
   printerToggle.hidden = false;
-  if (software) renderer.setDynamicRoots(printer.root, pendant.object, cityWindow.particles, cat.object);
+  if (software) renderer.setDynamicRoots(printer.root, pendant.object, cityWindow.particles, cat.object, coffee.root);
   layoutEditor = createLayoutEditor({
     scene, camera, canvas: renderer.domElement, items: workshop.editables, ceiling: workshop.ceiling,
     getPose: currentRoomPose,
@@ -205,7 +210,7 @@ function resize() {
       }
       positionSurface(surface, width, height, projection);
     }
-    showSurface(surface, surface.active || (researchMonitorLayout.matches ? surface.preview : null));
+    showSurface(surface, surface.active || availablePreview(surface));
   }
   if (cameraEffects) cameraEffects.resize(width, height, cameraSettings.settings.smoothing);
   else renderer.setSize(width, height);
@@ -377,6 +382,10 @@ function updateDisplayTexture(texture, canvas) {
   return texture;
 }
 
+function availablePreview(surface) {
+  return researchMonitorLayout.matches && !surface.deferPreview ? surface.preview : null;
+}
+
 function showSurface(surface, texture) {
   const material = surface.mesh.material;
   const map = texture || surface.idleMap;
@@ -407,7 +416,7 @@ export function setSurfacePreview(id, canvas, pinPositions) {
   const surface = exhibitSurfaces[id];
   surface.preview = updateDisplayTexture(surface.preview, canvas);
   surface.previewPins = pinPositions;
-  if (surface.mesh && researchMonitorLayout.matches && !surface.active) {
+  if (surface.mesh && availablePreview(surface) && !surface.active) {
     showSurface(surface, surface.preview);
   }
 }
@@ -423,7 +432,7 @@ export function setSurfaceImage(id, canvas, pinPositions) {
 
 function restoreSurface(surface) {
   if (!surface.active) return;
-  showSurface(surface, researchMonitorLayout.matches ? surface.preview : null);
+  showSurface(surface, availablePreview(surface));
   surface.active.dispose();
   surface.active = null;
   surface.host.removeAttribute('data-textured');
@@ -625,11 +634,7 @@ function highlightAction(object) {
 // The room index points at an exhibit before the visitor opens it.
 export function hintRoomObject(id) {
   if (!renderer || layoutEditor?.active || letteringEditor.active) return;
-  const target = current ? null : id;
-  halos.highlightId(target);
-  for (const label of letteringLayer.querySelectorAll('.object-lettering')) {
-    label.classList.toggle('is-hinted', Boolean(target) && label.dataset.action === target);
-  }
+  halos.highlightId(current ? null : id);
 }
 
 function hover(event) {
@@ -678,38 +683,63 @@ function togglePrinting() {
   printer?.update(printSeconds, !printing);
   dirty = true;
 }
-let lastFrame=0;
-let finishSceneLoading = () => {
-  const loading = $('#scene-loading');
+let lastFrame = 0;
+let loadingSeconds = 0;
+const startupSurfaceWait = 4.5;
+let sceneLoading = $('#scene-loading');
+
+function canRevealScene() {
+  if (!researchMonitorLayout.matches || loadingSeconds >= startupSurfaceWait) return true;
+  const allPreviewsReady = Object.values(exhibitSurfaces).every(surface =>
+    surface.preview || surface.host.querySelector('[data-capture-error]:not([data-scene])'),
+  );
+  const focused = focusedSurface();
+  return allPreviewsReady && (!focused || focused.active || focused.host.querySelector('[data-scene][data-capture-error]'));
+}
+
+function revealScene() {
+  const loading = sceneLoading;
+  if (researchMonitorLayout.matches) {
+    for (const surface of Object.values(exhibitSurfaces)) {
+      // A late preview must not replace the fallback in the already visible room.
+      if (!surface.preview && surface !== focusedSurface()) surface.deferPreview = true;
+    }
+  }
+  sceneLoading = null;
   loading.classList.add('is-ready');
   setTimeout(() => loading.remove(), 350);
-};
+}
 
-function animate(time=0){requestAnimationFrame(animate);if(document.hidden || (current && !dirty && !cameraMove)){lastPrintFrame=time;return;}const dt=Math.max(0,Math.min(.25,(time-lastPrintFrame)/1000));lastPrintFrame=time;
+function animate(time = 0) {
+ requestAnimationFrame(animate);
+ if (document.hidden || (current && !dirty && !cameraMove && !sceneLoading)) { lastPrintFrame = time; return; }
+ const dt = Math.max(0, Math.min(.25, (time - lastPrintFrame) / 1000));
+ lastPrintFrame = time;
+ if (sceneLoading) loadingSeconds += dt;
  updateCameraMove(time);
+ const reveal = sceneLoading && canRevealScene();
  const canPrint = printing && !current && !layoutEditor?.active;
  const zone = activeRoomZone();
  const canSway = !reduce && !current && !layoutEditor?.active && (!zone || zone === 'desk');
+ if (canSway) steamSeconds += dt;
  if(canPrint)printSeconds+=dt;
  if (canSway) pendantSeconds += dt;
  const catMoved = !current && !layoutEditor?.active && cat.update(dt, !reduce);
- const sceneTick=!software||dirty||time-lastFrame>140;
+ const sceneTick=!software||dirty||reveal||time-lastFrame>140;
  if (sceneTick) {
    if (canPrint) printer.update(printSeconds);
    if (canSway) pendant.update(pendantSeconds);
    if (canPrint || canSway || catMoved) renderer.shadowMap.needsUpdate = true;
    const movingOutside = !reduce && !current && !layoutEditor?.active && cityWindow.update(time, camera);
-   if (!software || dirty || canPrint || canSway || catMoved || movingOutside) {
+   if (!software || dirty || reveal || canPrint || canSway || catMoved || movingOutside) {
+     coffee.update(steamSeconds, camera);
      if (cameraEffects && !layoutEditor?.active) {
        const settings = cameraSettings.settings;
        cameraEffects.render(camera, settings, cameraFocus(settings));
      } else renderer.render(scene, camera);
-     if (finishSceneLoading) {
-       finishSceneLoading();
-       finishSceneLoading = null;
-     }
      if (layoutEditor?.active) layoutEditor.projectSelection();
      else updateSceneOverlay();
+     if (reveal) revealScene();
      dirty = false;
    }
    lastFrame = time;
@@ -762,11 +792,12 @@ $('#help-backdrop').onclick = $('#help-close').onclick = () => {
 syncExhibit();
 addEventListener('resize',resize);
 researchMonitorLayout.addEventListener('change', resize);
-Promise.all([loadRoomModels(),loadEveningBackdrop()])
-  .then(([,backdrop]) => createRoom(backdrop))
+Promise.all([loadRoomModels(), loadEveningBackdrop(), loadPackingMark()])
+  .then(([, backdrop, mark]) => createRoom(backdrop, mark))
   .catch(error => {
     console.error(error);
-    $('#scene-loading')?.remove();
+    sceneLoading?.remove();
+    sceneLoading = null;
     $('#scene-error').hidden = false;
     for (const { host } of Object.values(exhibitSurfaces)) host.removeAttribute('data-approaching');
     exhibitNavigation.setSceneExhibits(null);

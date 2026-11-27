@@ -571,3 +571,62 @@
   .exhibit-dialog .exhibit-description { grid-row: 4; padding: 14px 24px 40px }
   .exhibit-dialog .exhibit-print { --caption-space: 80px }
 }
+
+.prototype-studies { margin-top: 22px }
+.prototype-studies h3 { margin: 0 0 10px; font-size: 15px; color: #29291e }
+.prototype-study-list { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none }
+.prototype-study { border: 1px solid #79614050 }
+.prototype-study[data-active] { border-color: #844737; background: #f6ebd47a }
+
+.prototype-study button {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 54px;
+  width: 100%;
+  padding: 5px 10px 5px 5px;
+  text-align: left;
+  font-weight: 650;
+}
+
+.prototype-study button:hover { background: #9c6a3b16 }
+.prototype-study button svg { color: #783f30 }
+.prototype-study button img { display: block; width: 42px; height: 42px; object-fit: cover }
+.prototype-study p { margin: 1px 13px 12px 57px }
+.prototype-study p, .prototype-model-note, .prototype-study-mobile-note p {
+  color: var(--catalog-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.prototype-model-note { margin: 0 0 12px }
+.prototype-study-mobile-note,
+.exhibit-media-footer .prototype-mobile-picker { display: none }
+
+@media (min-width: 781px) {
+  .exhibit-dialog[data-entry="prototypes"] .exhibit-media-footer:has(.prototype-mobile-picker) {
+    min-height: 14px;
+    padding: 0;
+  }
+}
+
+@media (max-width: 780px) {
+  .prototype-study-list { display: none }
+  .prototype-study-mobile-note { display: block }
+  .prototype-study-mobile-note h4 { margin: 0 0 4px; font-size: 15px }
+  .prototype-study-mobile-note p { margin: 0 }
+  .exhibit-media-footer .prototype-mobile-picker { display: flex; flex-wrap: wrap; justify-content: center }
+  .exhibit-media-footer .prototype-mobile-picker button {
+    min-height: 44px;
+    padding: 6px 10px;
+    border: 1px solid #8a785c75;
+    background: #e4d6ba;
+    color: #29291e;
+  }
+  .exhibit-media-footer .prototype-mobile-picker button[aria-pressed="true"] {
+    border-color: #783f30;
+    background: #783f30;
+    color: #fff5e2;
+  }
+}

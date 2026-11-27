@@ -53,6 +53,7 @@ function IndexGroups({ idPrefix, detailed, onSelect }) {
             <button
               type="button"
               className="room-index-link"
+              data-exhibit={id}
               onPointerEnter={detailed ? undefined : hintOnPointer(id)}
               onPointerLeave={detailed ? undefined : clearHint}
               onFocus={detailed ? undefined : hintOnFocus(id)}
@@ -74,13 +75,14 @@ function ContactButton({ onSelect, hint = false }) {
     <button
       type="button"
       className="room-index-contact"
+      data-exhibit="contacts"
       onPointerEnter={hint ? hintOnPointer('contacts') : undefined}
       onPointerLeave={hint ? clearHint : undefined}
       onFocus={hint ? hintOnFocus('contacts') : undefined}
       onBlur={hint ? clearHint : undefined}
       onClick={() => onSelect('contacts')}
     >
-      <Mail aria-hidden="true" />Связаться
+      <Mail aria-hidden="true" /><span>Связаться</span>
     </button>
   )
 }

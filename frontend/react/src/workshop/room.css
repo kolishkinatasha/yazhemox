@@ -94,6 +94,7 @@
 
 #object-halos{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 #object-lettering{position:absolute;inset:0;z-index:1;pointer-events:none}
+#workshop:not(.lettering-editing) #object-lettering{visibility:hidden}
 .camera-moving #object-lettering,.layout-editing #object-lettering{visibility:hidden}
 .brand span,.object-lettering{font-size:clamp(9px,.85vw,11px);font-weight:500;letter-spacing:1.5px;text-transform:uppercase}
 .object-lettering{

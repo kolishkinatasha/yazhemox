@@ -2,7 +2,7 @@ import { createPortal } from 'react-dom'
 import * as Dialog from '@radix-ui/react-dialog'
 import { ArrowLeft, ArrowRight, ArrowUpRight, BookOpen, FileText, Layers, X } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { exhibitNavigation, researchMonitorLayout, researchPhotos } from './workshop/exhibit-navigation.js'
+import { exhibitNavigation, researchMonitorLayout, researchPhotos, roomIndexControl } from './workshop/exhibit-navigation.js'
 import { captureSurface } from './workshop/surface-capture.js'
 import { surfaceControlAt, setSurfaceImage, setSurfacePreview } from './workshop/scene.js'
 import { catalogue } from './workshop/workshop-catalog.js'
@@ -178,7 +178,7 @@ export default function ResearchMonitor({ exhibit }) {
             const previous = opener.current
             const target = previous instanceof HTMLElement && previous !== document.body && previous.getClientRects().length
               ? previous
-              : document.getElementById('browse')
+              : roomIndexControl('engineering')
             target?.focus({ preventScroll: true })
           }}
           onKeyDown={event => {

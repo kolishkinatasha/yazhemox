@@ -47,7 +47,7 @@ function syncRoute() {
   publish({
     id, hash, entry, section, parentTitle, backLabel, returningFrom, sceneExhibits,
     photos: gallery,
-    zoom: segments.includes('photo') && gallery.length > 0,
+    zoom: id !== 'about' && segments.includes('photo') && gallery.length > 0,
     research: isResearch ? research : null,
     shelf: id === 'generator' ? { fields: shelfFields, defaults: shelfDefaults } : null,
   })
@@ -85,6 +85,14 @@ function back() {
 
 window.addEventListener('hashchange', syncRoute)
 syncRoute()
+
+export function roomIndexControl(exhibitId) {
+  const index = document.querySelector('.room-index')
+  if (!index) return null
+  const entries = [...index.querySelectorAll('.room-index-strip [data-exhibit], .room-index-compact [data-exhibit]')]
+  return entries.find(button => button.dataset.exhibit === exhibitId && button.getClientRects().length)
+    ?? index.querySelector('.room-index-toggle')
+}
 
 export const exhibitNavigation = {
   getSnapshot: () => snapshot,

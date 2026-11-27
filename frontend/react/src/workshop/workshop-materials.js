@@ -135,13 +135,13 @@ export function workshopMaterials(wallWidth, roomDepth, wallHeight) {
     });
   });
   const filament = texture(48, 128, (ctx, width, height) => {
-    ctx.fillStyle = '#dedede';
+    ctx.fillStyle = '#e9e9e9';
     ctx.fillRect(0, 0, width, height);
-    for (let y = 0; y < height; y += 4) {
-      ctx.fillStyle = '#8f8f8';
-      ctx.fillRect(0, y, width, 1);
-      ctx.fillStyle = '#f9f9f9';
-      ctx.fillRect(0, y + 1, width, 1);
+    for (let y = 0; y < height; y += 9) {
+      ctx.fillStyle = '#747474';
+      ctx.fillRect(0, y, width, 2);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, y + 2, width, 2);
     }
   });
   const powder = texture(128, 128, (ctx, width, height) => {
@@ -162,7 +162,7 @@ export function workshopMaterials(wallWidth, roomDepth, wallHeight) {
     deskMat: textured(repeating(cloth, 4, 2), { color: '#38332c', roughness: .97, bumpScale: .009 }),
     deskFrame: textured(powder, { color: '#353536', roughness: .79, bumpScale: .004 }),
     cardboard: textured(kraft, { color: '#b58c63', roughness: .93, bumpScale: .011 }),
-    filament: ['#305066', '#626771', '#a08568', '#4b6863'].map(color => textured(filament, { color, roughness: .49, bumpScale: .004 })),
+    filament: ['#5d9bc9', '#d77a52', '#63b9a8', '#e4bf6d'].map(color => textured(filament, { color, roughness: .44, bumpScale: .003 })),
     powderCoat: new T.MeshStandardMaterial({ color: '#363432', roughness: .55, metalness: .18 }),
   };
 }

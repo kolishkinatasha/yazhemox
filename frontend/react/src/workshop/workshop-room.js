@@ -142,7 +142,7 @@ function addPinHardware(cork) {
   shadow.scale(1, .72, 1);
   const shade = new T.MeshBasicMaterial({ color: '#352313', transparent: true, opacity: .24, depthWrite: false });
   const metal = material('#9a8873', .32);
-  for (const color of ['#86372d', '#e2c5a0', '#734c2e', '#3d564b', '#963b33', '#e6cca5']) {
+  for (const color of ['#86372d', '#e2c5a0', '#734c2e', '#3d564b', '#963b33', '#e6cca5', '#6b4e42']) {
     const pin = new T.Group();
     pins.add(pin);
     const shadowMesh = new T.Mesh(shadow, shade);
@@ -159,8 +159,31 @@ function addPinHardware(cork) {
 
 function addPinboard(scene, x) {
   const board = group(scene, x, 4.59, backWall + .035);
-  const frame = material('#dfc5a8');
-  box(board, frame, 2.8, 1.78, .09, 0, 0, 0);
+  const railMap = texture(384, 56, (ctx, w, h) => {
+    ctx.fillStyle = '#c49e77';
+    ctx.fillRect(0, 0, w, h);
+    const next = random(291);
+    for (let i = 0; i < 86; i++) {
+      const y = next() * h;
+      ctx.strokeStyle = i % 3 ? '#8a624231' : '#f1d0a94e';
+      ctx.lineWidth = .45 + next();
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.bezierCurveTo(w * .36, y + next() * 6, w * .66, y - next() * 5, w, y);
+      ctx.stroke();
+    }
+  });
+  const backing = material('#86664c', .91);
+  const rail = new T.MeshStandardMaterial({ map: railMap, roughness: .76 });
+  const beading = material('#a48261', .84);
+  box(board, backing, 3.31, 1.78, .060, 0, 0, -.014);
+  for (const sign of [-1, 1]) {
+    roundedBox(board, rail, 3.31, .054, .087, .009, 0, sign * .862, .014);
+    const side = roundedBox(board, rail, 1.684, .057, .087, .009, sign * 1.624, 0, .014);
+    side.rotation.z = Math.PI / 2;
+    box(board, beading, 3.19, .014, .035, 0, sign * .839, .050);
+    box(board, beading, .014, 1.67, .035, sign * 1.600, 0, .050);
+  }
   const map = texture(896, 560, (ctx, w, h) => {
     drawCork(ctx, w, h);
     const cards = [
@@ -225,7 +248,7 @@ function addPinboard(scene, x) {
       ctx.restore();
     });
   });
-  const cork = mesh(board, new T.PlaneGeometry(2.69, 1.67), new T.MeshBasicMaterial({ map }), 0, 0, .046);
+  const cork = mesh(board, new T.PlaneGeometry(3.19, 1.67), new T.MeshBasicMaterial({ map }), 0, 0, .046);
   cork.name = 'author-cork';
   cork.castShadow = false;
   cork.geometry.computeBoundingBox();
@@ -280,8 +303,6 @@ function addMonitor(desk) {
   roundedBox(pc, hinge, .53, .32, .15, .034, 0, .81, -.14);
   for (let i = 0; i < 8; i++) box(pc, black, .034, .015, .004, (i - 3.5) * .052, .883, -.217);
   roundedBox(pc, material('#2f3232', .66), 1.64, .73, .19, .06, 0, .93, -.09);
-  tube(pc, black, [[.16, .68, -.21], [.17, .49, -.27], [.07, .30, -.36], [.18, .048, -.49]], .019);
-  tube(pc, dark, [[-.09, .66, -.22], [-.12, .42, -.30], [-.02, .24, -.32], [-.14, .042, -.52]], .013);
 
   const map = texture(1120, 480, (ctx, w, h) => {
     const panel = ctx.createLinearGradient(245, 0, w, h);
@@ -415,25 +436,46 @@ function addKeyboard(desk) {
 
 function addMouse(desk) {
   const mouse = group(desk, 1.40, worktop + .036, .40, -.10);
-  const shell = new T.SphereGeometry(1, 32, 16);
+  const shell = new T.SphereGeometry(1, 40, 22);
   const points = shell.attributes.position;
   for (let i = 0; i < points.count; i++) {
     const x = points.getX(i), y = points.getY(i), z = points.getZ(i);
     points.setXYZ(i, x * .145 * (.93 - .11 * z),
-      Math.max(-.019, y * .105 - Math.max(0, -z) * .048), z * .227);
+      Math.max(-.019, y * .105 - Math.max(0, -z) * .036), z * .227);
   }
   shell.computeVertexNormals();
-  mesh(mouse, shell, material('#353636', .53), 0, 0, 0);
-  const seam = [-.045, -.095, -.145, -.19, -.225].map(z => {
-    const profile = z / .227;
-    const y = Math.max(-.019, .105 * Math.sqrt(1 - profile * profile) + .048 * profile);
-    return [0, y, z];
+  mesh(mouse, shell, material('#383c3d', .42), 0, 0, 0);
+
+  const surfaceY = (x, z) => {
+    const front = z / .227;
+    const across = x / (.145 * (.93 - .11 * front));
+    return Math.max(-.018, .105 * Math.sqrt(Math.max(0, 1 - across ** 2 - front ** 2)) + .036 * Math.min(0, front));
+  };
+  const seam = points => points.map(([x, z]) => [x, surfaceY(x, z) + .002, z]);
+  tube(mouse, black, seam([[0, -.130], [0, -.16], [0, -.19], [0, -.219], [0, -.227]]), .0034);
+  for (const side of [-1, 1]) {
+    tube(mouse, black, seam([[side * .019, -.048], [side * .049, -.030], [side * .090, -.038],
+      [side * .121, -.068], [side * .130, -.097]]), .0028);
+  }
+
+  const tread = material('#666865', .74);
+  roundedBox(mouse, black, .049, .010, .070, .004, 0, .083, -.089);
+  const wheel = group(mouse, 0, .086, -.09);
+  cylinder(wheel, material('#262828', .88), .025, .025, .032, 0, 0, 0, 20).rotation.z = Math.PI / 2;
+  for (let i = 0; i < 14; i++) {
+    const angle = i * Math.PI * 2 / 14;
+    box(wheel, tread, .027, .003, .0045, 0, .025 * Math.cos(angle), .025 * Math.sin(angle)).rotation.x = angle;
+  }
+  roundedBox(mouse, tread, .025, .009, .022, .004, 0, .107, -.020);
+  roundedBox(mouse, black, .018, .015, .055, .006, -.127, .038, .011);
+  roundedBox(mouse, black, .018, .014, .043, .006, -.133, .033, -.049);
+
+  const shellLine = Array.from({ length: 24 }, (_, i) => {
+    const angle = i * Math.PI * 2 / 24;
+    const z = .214 * Math.sin(angle);
+    return [.133 * Math.cos(angle) * (.95 - .12 * z / .227), -.012, z];
   });
-  tube(mouse, black, seam, .004);
-  const wheel = cylinder(mouse, material('#292b2b', .92), .027, .027, .030, 0, .092, -.087, 14);
-  wheel.rotation.z = Math.PI / 2;
-  roundedBox(mouse, black, .018, .012, .054, .005, -.130, .025, .007);
-  roundedBox(mouse, black, .018, .012, .040, .005, -.137, .023, -.050);
+  tube(mouse, black, shellLine, .004, true);
   return mouse;
 }
 
@@ -641,6 +683,102 @@ function addPrintSample(parent, surface, x, y, z, radius, height) {
   return sample;
 }
 
+function lacedSlat(angle, t, offset = 0) {
+  const twist = angle + .82 * (t - .5);
+  const radius = .058 + .124 * Math.abs(2 * t - 1) ** 1.6 + offset;
+  return [radius * Math.cos(twist), .009 + .53 * t, radius * Math.sin(twist)];
+}
+
+function addLacedPrototype(parent, x, y, z) {
+  const prototype = group(parent, x, y, z, .14);
+  const plastic = material('#407eaf', .68);
+  const cord = material('#204c7b', .86);
+  const ribs = 6;
+  const pointsPerSlat = 20;
+  for (let rib = 0; rib < ribs; rib++) {
+    const angle = rib / ribs * Math.PI * 2;
+    const vertices = [];
+    const indices = [];
+    for (let step = 0; step <= pointsPerSlat; step++) {
+      const t = step / pointsPerSlat;
+      const [px, py, pz] = lacedSlat(angle, t);
+      const tangent = angle + .82 * (t - .5);
+      const width = .016;
+      const thickness = .006;
+      for (const [w, d] of [[-width, -thickness], [width, -thickness], [width, thickness], [-width, thickness]]) {
+        vertices.push(px - w * Math.sin(tangent) + d * Math.cos(tangent), py, pz + w * Math.cos(tangent) + d * Math.sin(tangent));
+      }
+      if (step > 0) {
+        const base = (step - 1) * 4;
+        for (let side = 0; side < 4; side++) {
+          const next = (side + 1) % 4;
+          indices.push(base + side, base + next, base + side + 4, base + next, base + next + 4, base + side + 4);
+        }
+      }
+    }
+    const top = pointsPerSlat * 4;
+    indices.push(0, 2, 1, 0, 3, 2, top, top + 1, top + 2, top, top + 2, top + 3);
+    const slat = new T.BufferGeometry();
+    slat.setAttribute('position', new T.Float32BufferAttribute(vertices, 3));
+    slat.setIndex(indices);
+    slat.computeVertexNormals();
+    mesh(prototype, slat, plastic, 0, 0, 0);
+
+    const nextAngle = (rib + 1) / ribs * Math.PI * 2;
+    const cross = Array.from({ length: 16 }, (_, i) =>
+      lacedSlat(i % 2 ? nextAngle : angle, .21 + .039 * i, -.004));
+    tube(prototype, cord, cross, .004);
+  }
+  return prototype;
+}
+
+function addFoldedPrototype(parent, x, y, z) {
+  const prototype = group(parent, x, y, z, -.14);
+  const folds = 12;
+  const edges = folds * 2;
+  const levels = [
+    [0, .100, .020],
+    [.072, .093, .025],
+    [.153, .085, .028],
+    [.235, .121, .032],
+    [.326, .152, .036],
+  ];
+  const vertices = [];
+  const indices = [];
+  for (const [level, [height, radius, pleat]] of levels.entries()) {
+    const t = height / levels.at(-1)[0];
+    for (const skin of [0, 1]) {
+      for (let edge = 0; edge < edges; edge++) {
+        const angle = edge / edges * Math.PI * 2 + t * .84;
+        const r = radius + (edge % 2 ? pleat : -pleat) - skin * .009;
+        const peak = level === levels.length - 1 && edge % 2 ? .008 : 0;
+        vertices.push(r * Math.cos(angle), height + peak, r * Math.sin(angle));
+      }
+    }
+    if (level === 0) continue;
+    const lower = (level - 1) * edges * 2;
+    const upper = level * edges * 2;
+    for (let edge = 0; edge < edges; edge++) {
+      const next = (edge + 1) % edges;
+      indices.push(lower + edge, upper + edge, lower + next, lower + next, upper + edge, upper + next);
+      indices.push(lower + edges + edge, lower + edges + next, upper + edges + edge,
+        lower + edges + next, upper + edges + next, upper + edges + edge);
+      if (level === levels.length - 1) {
+        indices.push(upper + edge, upper + edges + edge, upper + next,
+          upper + next, upper + edges + edge, upper + edges + next);
+      }
+    }
+  }
+  const shell = new T.BufferGeometry();
+  shell.setAttribute('position', new T.Float32BufferAttribute(vertices, 3));
+  shell.setIndex(indices);
+  shell.computeVertexNormals();
+  const clay = new T.MeshStandardMaterial({ color: '#9c8268', roughness: .88, flatShading: true, side: T.DoubleSide });
+  mesh(prototype, shell, clay, 0, 0, 0);
+  cylinder(prototype, clay, .091, .091, .013, 0, .0065, 0, 24);
+  return prototype;
+}
+
 function shelfDrawing(ctx, width, height) {
   const ink = '#f7edd3';
   const accent = '#f6b680';
@@ -700,7 +838,6 @@ function shelfDrawing(ctx, width, height) {
 }
 
 function addDrawingStand(parent) {
-  // The foot rests on the lid of the uppermost box on the bottom shelf.
   const stand = group(parent, -.01, .495, .04, -.06);
   const support = material('#9c7851');
   box(stand, support, .41, .024, .30, 0, .012, .006);
@@ -718,23 +855,117 @@ function addDrawingStand(parent) {
 
 function addHeadphones(shelf, level) {
   const headphones = group(shelf, -1.075, level, .40, -.35);
-  const blue = material('#315c81', .55);
-  rod(headphones, black, [.04, .09, -.055], [.04, .09, .12], .024);
-  tube(headphones, blue, [[-.18, -.24, .08], [-.20, -.04, .08], [-.12, .12, .08], [0, .16, .08], [.12, .12, .08], [.20, -.04, .08], [.18, -.24, .08]], .025);
-  tube(headphones, black, [[-.147, .024, .08], [-.103, .073, .08], [0, .118, .08], [.103, .073, .08], [.147, .024, .08]], .028);
-  const cupGeometry = new T.SphereGeometry(1, 16, 10);
-  const padding = new T.TorusGeometry(.060, .020, 7, 22);
-  const hinge = material('#717777', .52);
-  for (const side of [-1, 1]) {
-    const cup = mesh(headphones, cupGeometry, blue, side * .18, -.22, .082);
-    cup.scale.set(.080, .118, .084);
-    const cushion = mesh(headphones, padding, black, side * .112, -.22, .083);
-    cushion.rotation.y = Math.PI / 2;
-    cushion.scale.y = 1.18;
-    cylinder(headphones, dark, .051, .051, .023, side * .127, -.22, .083, 18).rotation.z = Math.PI / 2;
-    cylinder(headphones, hinge, .028, .028, .027, side * .213, -.14, .082, 16).rotation.z = Math.PI / 2;
+  const blue = new T.MeshStandardMaterial({ color: '#3a6380', roughness: .49, metalness: .18 });
+  const trim = material('#272d2e', .59);
+  const leather = material('#302d29', .88);
+  const seam = material('#514a42', .91);
+  const alloy = new T.MeshStandardMaterial({ color: '#8e8e86', roughness: .43, metalness: .55 });
+  rod(headphones, trim, [.04, .109, -.055], [.04, .109, .133], .024);
+  mesh(headphones, new T.SphereGeometry(.027, 16, 10), trim, .04, .109, .135).scale.z = .40;
+
+  const arcPoint = (angle, rx, ry) => [rx * Math.cos(angle), -.083 + ry * Math.sin(angle)];
+  function band(surface, outer, inner, start, end, width) {
+    const profile = new T.Shape();
+    const steps = 24;
+    for (let i = 0; i <= steps; i++) {
+      const angle = T.MathUtils.lerp(start, end, i / steps);
+      const point = arcPoint(angle, ...outer);
+      if (i === 0) profile.moveTo(...point);
+      else profile.lineTo(...point);
+    }
+    for (let i = steps; i >= 0; i--) {
+      const angle = T.MathUtils.lerp(start, end, i / steps);
+      profile.lineTo(...arcPoint(angle, ...inner));
+    }
+    profile.closePath();
+    const shell = new T.ExtrudeGeometry(profile, {
+      depth: width - .006, bevelEnabled: true, bevelSize: .003, bevelThickness: .003, bevelSegments: 2,
+    });
+    mesh(headphones, shell, surface, 0, 0, .087 - (width - .006) / 2);
   }
-  tube(headphones, black, [[-.19, -.31, .08], [-.20, -.50, .09], [-.12, -.68, .1], [-.15, -.84, .08]], .009);
+
+  band(blue, [.210, .258], [.188, .236], 0, Math.PI, .075);
+  band(leather, [.185, .232], [.161, .206], .32, Math.PI - .32, .079);
+  for (const z of [.054, .120]) {
+    const edge = Array.from({ length: 13 }, (_, i) => [...arcPoint(.34 + 2.46 * i / 12, .175, .215), z]);
+    tube(headphones, seam, edge, .0017);
+  }
+
+  const shellProfile = [[0, -.037], [.093, -.037], [.108, -.031], [.114, -.020], [.114, .015],
+    [.108, .034], [.096, .046], [.075, .053], [0, .055]];
+  const cupShape = new T.LatheGeometry(shellProfile.map(point => new T.Vector2(...point)), 40)
+    .rotateZ(-Math.PI / 2).scale(1, 1.13, .89);
+  const ringShape = (radius, thickness) => new T.TorusGeometry(radius, thickness, 10, 38)
+    .rotateY(Math.PI / 2).scale(1, 1.13, .89);
+  const shellRim = ringShape(.108, .005);
+  const cushionShape = ringShape(.077, .025);
+  const stitchShape = ringShape(.089, .0018);
+  const grilleMap = texture(160, 160, (ctx, w, h) => {
+    ctx.fillStyle = '#374048';
+    ctx.fillRect(0, 0, w, h);
+    for (let y = 4; y < h; y += 9) {
+      for (let x = 4 + ((y - 4) / 9 % 2) * 4; x < w; x += 9) {
+        ctx.fillStyle = '#212527';
+        ctx.beginPath(); ctx.arc(x, y, 2.4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#687477';
+        ctx.fillRect(x - 1, y + 3, 2, 1);
+      }
+    }
+  });
+  const grille = new T.MeshStandardMaterial({ map: grilleMap, roughness: .72 });
+  const inset = new T.MeshBasicMaterial({ color: '#242625' });
+
+  for (const side of [-1, 1]) {
+    const x = side * .190;
+    const slider = roundedBox(headphones, alloy, .018, .102, .046, .005, x, -.119, .087);
+    slider.rotation.z = side * .06;
+    for (const z of [.053, .120]) {
+      tube(headphones, trim, [[side * .195, -.131, z], [side * .207, -.154, z],
+        [side * .227, -.196, z], [side * .236, -.225, .087 + (z - .087) * .75]], .010);
+    }
+
+    const cup = group(headphones, x, -.225, .087, side === 1 ? -.10 : Math.PI + .10);
+    mesh(cup, cupShape, blue, 0, 0, 0);
+    mesh(cup, shellRim, trim, .018, 0, 0);
+    mesh(cup, cushionShape, leather, -.052, 0, 0);
+    mesh(cup, stitchShape, seam, -.070, 0, 0);
+    const innerFabric = mesh(cup, new T.CircleGeometry(.068, 32), inset, -.040, 0, 0);
+    innerFabric.rotation.y = -Math.PI / 2;
+    innerFabric.scale.set(.89, 1.13, 1);
+
+    const outerGrille = mesh(cup, new T.CircleGeometry(.075, 36), grille, .0555, 0, 0);
+    outerGrille.rotation.y = Math.PI / 2;
+    outerGrille.scale.set(.89, 1.13, 1);
+    outerGrille.castShadow = false;
+    mesh(cup, ringShape(.076, .003), trim, .057, 0, 0);
+    for (const z of [-.069, .069]) {
+      cylinder(cup, alloy, .012, .012, .008, .045, .014, z, 12).rotation.z = Math.PI / 2;
+    }
+  }
+  const cable = material('#262a29', .86);
+  const lead = [[-.190, -.327, .086], [-.205, -.388, .087], [-.207, -.455, .095], [-.178, -.494, .102]];
+  const coil = Array.from({ length: 65 }, (_, index) => {
+    const t = index / 64;
+    const angle = Math.PI * (.53 + 4.5 * t);
+    return [
+      -.162 + (.114 - .015 * t) * Math.cos(angle),
+      -.606 - .028 * t + (.144 - .013 * t) * Math.sin(angle),
+      .103 + .025 * t + .006 * Math.sin(angle * 2),
+    ];
+  });
+  const tail = [[-.230, -.737, .137], [-.227, -.832, .145], [-.218, -.939, .152]];
+  tube(headphones, cable, [...lead, ...coil, ...tail], .007);
+  roundedBox(headphones, material('#4b4b42', .89), .047, .038, .071, .008, -.164, -.465, .111);
+  rod(headphones, cable, [-.190, -.320, .085], [-.197, -.354, .087], .0125);
+
+  const plug = group(headphones, ...tail.at(-1));
+  const axis = new T.Vector3(...tail.at(-1)).sub(new T.Vector3(...tail.at(-2))).normalize();
+  plug.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), axis);
+  cylinder(plug, black, .0145, .009, .037, 0, .018, 0, 12);
+  const brass = material('#c2ac77', .35);
+  cylinder(plug, brass, .0066, .0066, .035, 0, .054, 0, 12);
+  for (const y of [.049, .061]) cylinder(plug, dark, .007, .007, .003, 0, y, 0, 12);
+  cylinder(plug, brass, .004, .0066, .008, 0, .073, 0, 10);
   return headphones;
 }
 
@@ -792,15 +1023,15 @@ function addMonstera(shelf, level) {
   const map = leafTexture();
   const foliage = ['#3b593a', '#50724a', '#58734a'].map(color => new T.MeshStandardMaterial({ color, map, roughness: .52, side: T.DoubleSide }));
   const leaves = [
-    [-.92, .92, .07, .32, -.36, 1.05, .62],
+    [-.59, 1.18, -.15, .24, -.31, .86, .59],
     [-.50, 1.32, -.03, -.23, .47, .37, .66],
     [.22, 1.29, -.02, -.35, -.1, -.28, .66],
     [.68, 1.21, -.08, -.48, -.23, -.82, .71],
     [.86, .87, .14, .35, -.36, -1.30, .77],
     [.64, .69, .41, .28, -.18, -2.05, .63],
-    [-.40, .67, .45, -.28, .17, 1.68, .63],
+    [-.06, .89, -.16, -.25, .17, .58, .49],
     [.28, .62, .25, .25, -.25, -.67, .31],
-    [-.23, .74, .05, -.32, -.25, .31, .34],
+    [.02, .75, -.13, -.32, -.25, -.19, .34],
   ];
   leaves.forEach(([x, y, z, rx, ry, rz, size], i) => {
     tube(plant, green, [[x * .08, .47, z * .12], [x * .27, .49 + (y - .49) * .68, z * .30],
@@ -844,10 +1075,165 @@ function addShelfBody(shelf, height, surfaces) {
   return bounds;
 }
 
-function addShelving(scene, register, surfaces) {
+export async function loadPackingMark() {
+  const image = new Image();
+  image.src = '/media/ui/yazhemoh-mark.svg';
+  try {
+    await image.decode();
+    return image;
+  } catch {
+    return null;
+  }
+}
+
+function packingLabel(mark) {
+  const map = texture(256, 176, (ctx, w, h) => {
+    ctx.fillStyle = '#e9e2ce';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = '#b1a28b';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(6, 6, w - 12, h - 12);
+    if (mark) {
+      const height = 127;
+      const width = height * mark.naturalWidth / mark.naturalHeight;
+      ctx.drawImage(mark, (w - width) / 2, (h - height) / 2, width, height);
+    } else {
+      ctx.fillStyle = '#211d18';
+      ctx.font = '800 40px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('ЯЖЕМОХ', w / 2, 102);
+    }
+  });
+  return new T.MeshStandardMaterial({ map, roughness: .95 });
+}
+
+function addPackingBox(parent, { x = 0, y = 0, z = 0, width, height, depth, yaw = 0, mark = 0, body, lid, label }) {
+  const carton = group(parent, x, y, z, yaw);
+  const lidHeight = Math.min(.053, height / 4);
+  const lidDepth = depth + .016;
+  roundedBox(carton, body, width, height - lidHeight, depth, .014, 0, (height - lidHeight) / 2, 0);
+  roundedBox(carton, lid, width + .017, lidHeight, lidDepth, .012, 0, height - lidHeight / 2, 0);
+  if (mark) {
+    const face = mesh(carton, new T.PlaneGeometry(mark, mark * 176 / 256), label, 0, (height - lidHeight) * .47, depth / 2 + .001);
+    face.castShadow = false;
+  }
+  return carton;
+}
+
+function spoolFlange() {
+  const face = new T.Shape();
+  face.absarc(0, 0, .39, 0, Math.PI * 2, false);
+  const bore = new T.Path();
+  bore.absarc(0, 0, .104, 0, Math.PI * 2, true);
+  face.holes.push(bore);
+  for (let i = 0; i < 8; i++) {
+    const angle = i * Math.PI / 4;
+    const opening = new T.Path();
+    opening.absellipse(.255 * Math.cos(angle), .255 * Math.sin(angle), .045, .064, 0, Math.PI * 2, true, angle);
+    face.holes.push(opening);
+  }
+  return new T.ExtrudeGeometry(face, {
+    depth: .021, bevelEnabled: true, bevelSize: .004, bevelThickness: .004, bevelSegments: 1, curveSegments: 7,
+  }).rotateX(-Math.PI / 2);
+}
+
+function makeSpoolGeometry() {
+  const profile = [
+    [.112, .028], [.315, .028], [.337, .037], [.343, .05], [.343, .157],
+    [.335, .178], [.313, .182], [.112, .182], [.112, .028],
+  ].map(point => new T.Vector2(...point));
+  const coil = new T.LatheGeometry(profile, 52);
+  const uv = coil.attributes.uv;
+  const positions = coil.attributes.position;
+  for (let i = 0; i < uv.count; i++) {
+    uv.setY(i, (positions.getY(i) - .028) / (.182 - .028));
+  }
+  return {
+    coil,
+    flange: spoolFlange(),
+    lip: new T.TorusGeometry(.386, .008, 6, 48).rotateX(-Math.PI / 2),
+  };
+}
+
+function documentSpine({ title, detail, color, ink }) {
+  const map = texture(128, 576, (ctx, w, h) => {
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = ink;
+    ctx.lineWidth = 2;
+    for (const y of [43, 58, h - 58, h - 43]) {
+      ctx.beginPath();
+      ctx.moveTo(15, y); ctx.lineTo(w - 15, y); ctx.stroke();
+    }
+    ctx.translate(w / 2, h / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = ink;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 45px sans-serif';
+    ctx.fillText(title, 0, -16, h - 146);
+    ctx.font = '25px sans-serif';
+    ctx.fillText(detail, 0, 25, h - 148);
+  });
+  return new T.MeshStandardMaterial({ map, roughness: .82 });
+}
+
+function addBoundVolume(parent, { x, z, thickness, height, depth, tilt = 0, yaw = 0, color, ink, title, detail }, pages) {
+  const book = group(parent, x, 0, z, yaw);
+  book.rotation.z = tilt;
+  const cover = material(color, .82);
+  box(book, pages, thickness - .014, height - .024, depth - .017, 0, height / 2, -.006);
+  for (const sign of [-1, 1]) {
+    roundedBox(book, cover, .009, height, depth, .004, sign * (thickness - .009) / 2, height / 2, 0);
+  }
+  roundedBox(book, cover, thickness, height, .025, .008, 0, height / 2, depth / 2 - .0125);
+  const spine = mesh(book, new T.PlaneGeometry(thickness - .009, height - .015),
+    documentSpine({ title, detail, color, ink }), 0, height / 2, depth / 2 + .0007);
+  spine.castShadow = false;
+}
+
+function addDocumentArchive(files, stack) {
+  const edges = texture(112, 128, (ctx, w, h) => {
+    ctx.fillStyle = '#efe4ca';
+    ctx.fillRect(0, 0, w, h);
+    const next = random(147);
+    for (let x = 2; x < w; x += 3) {
+      ctx.fillStyle = next() < .32 ? '#b9aa8c' : '#d8cbad';
+      ctx.fillRect(x, 0, 1, h);
+    }
+  });
+  const pages = new T.MeshStandardMaterial({ map: edges, roughness: .94 });
+  const darkOak = material('#7b6147', .79);
+  roundedBox(files, darkOak, .115, .52, .32, .014, -.265, .26, -.035);
+  [
+    { x: -.137, z: .014, thickness: .146, height: .72, depth: .47, color: '#3c4b57', ink: '#efcf8a', title: 'ДИССЕРТАЦИЯ', detail: 'И. ЧУБАТОВ · 2021' },
+    { x: -.022, z: .041, thickness: .070, height: .62, depth: .40, yaw: .045, color: '#e2d4b5', ink: '#594135', title: 'АВТОРЕФЕРАТ', detail: 'НИУ МГСУ · 2021' },
+    { x: .12, z: -.013, thickness: .090, height: .66, depth: .43, tilt: .14, color: '#6b5547', ink: '#f2e4bf', title: 'РАСЧЁТЫ', detail: 'РАБОЧИЕ МАТЕРИАЛЫ' },
+  ].forEach(volume => addBoundVolume(files, volume, pages));
+
+  for (let i = 0; i < 5; i++) {
+    const sheet = box(stack, i === 0 ? pale : paper, .43 - i * .006, .013, .35, 0, .0065 + i * .0125, 0);
+    sheet.rotation.y = (i - 2) * .043;
+  }
+  const cover = texture(400, 320, (ctx, w, h) => {
+    ctx.fillStyle = '#eee5d0';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#655649';
+    ctx.font = 'bold 31px sans-serif';
+    ctx.fillText('МАТЕРИАЛЫ', 25, 59);
+    ctx.fillStyle = '#9f9381';
+    for (const [i, width] of [315, 338, 290, 316, 248].entries()) ctx.fillRect(26, 108 + i * 23, width, 3);
+  });
+  const coverMesh = mesh(stack, new T.PlaneGeometry(.404, .346),
+    new T.MeshStandardMaterial({ map: cover, roughness: .94 }), 0, .064, 0);
+  coverMesh.rotation.set(-Math.PI / 2, 0, .086);
+  coverMesh.castShadow = false;
+  box(stack, material('#746352', .9), .05, .015, .039, -.15, .071, -.151).rotation.y = -.09;
+}
+
+function addShelving(scene, register, surfaces, mark) {
   const shelf = register(group(scene, 5.45, 0, .25, -.86), 'shelf', 'Стеллаж');
   const { cardboard, filament } = surfaces;
-  const storage = material('#484b50');
   const height = 3.97;
   // Heights of the horizontal surfaces, measured from the feet in the OBJ.
   const [bottom, middle, upper] = [30, 400, 770.787].map(level => height * level / 1140);
@@ -859,74 +1245,59 @@ function addShelving(scene, register, surfaces) {
     return register(item, id, label, 'shelf');
   }
 
-  const organizer = shelve('shelf-organizer', 'Органайзеры внизу', -.65, bottom, .04, .76);
-  box(organizer, storage, .89, .39, .74, 0, .195, 0);
-  box(organizer, black, .32, .055, .018, 0, .249, .377);
-  box(organizer, material('#78796f'), .74, .12, .63, .03, .451, -.012).rotation.y = .09;
-  box(organizer, pale, .25, .045, .018, .05, .458, .304);
+  const label = packingLabel(mark);
+  const kraftLid = material('#ae8b61', .92);
+  const darkLid = material('#49473c', .92);
+  const olive = material('#656957', .91);
+  const organizer = shelve('shelf-organizer', 'Фирменные коробки слева', -.55, bottom, .12, .96);
+  addPackingBox(organizer, { width: .85, height: .36, depth: .62, yaw: -.045, body: cardboard, lid: kraftLid, label, mark: .32 });
+  addPackingBox(organizer, { x: -.03, y: .36, z: -.032, width: .69, height: .23, depth: .52, yaw: .075, body: olive, lid: darkLid, label, mark: .22 });
+  addPackingBox(organizer, { x: .06, y: .59, z: -.12, width: .43, height: .14, depth: .32, yaw: -.12, body: cardboard, lid: kraftLid, label });
 
-  const lowerBoxes = shelve('shelf-lower-boxes', 'Коробки внизу', .37, bottom, .03);
-  box(lowerBoxes, cardboard, .80, .31, .68, 0, .155, 0);
-  box(lowerBoxes, paper, .26, .10, .012, .09, .185, .345);
-  box(lowerBoxes, material('#63726e'), .62, .13, .45, .04, .375, -.045).rotation.y = -.07;
-  box(lowerBoxes, dark, .46, .055, .37, -.01, .467, .042).rotation.y = .13;
-  const drawing = register(addDrawingStand(lowerBoxes), 'shelf-drawing', 'Чертёж этажерки', 'shelf');
+  const lowerBoxes = shelve('shelf-lower-boxes', 'Фирменные коробки под раскроем', .37, bottom, .03);
+  addPackingBox(lowerBoxes, { width: .80, height: .315, depth: .68, body: cardboard, lid: kraftLid, label, mark: .28 });
+  addPackingBox(lowerBoxes, { x: -.018, y: .315, z: .025, width: .62, height: .18, depth: .48, yaw: .055, body: olive, lid: darkLid, label });
+  const drawingScale = 1.29;
+  const drawingMount = group(shelf, -.38, middle - .495 * drawingScale, .10);
+  drawingMount.scale.setScalar(drawingScale);
+  const drawing = register(addDrawingStand(drawingMount), 'shelf-drawing', 'Чертёж этажерки', 'shelf');
 
-  const spoolRim = material('#34363a');
-  for (let i = 0; i < filament.length; i++) {
+  const spoolRim = material('#41494a', .56);
+  const spoolLip = material('#586262', .44);
+  const spoolCore = new T.MeshStandardMaterial({ color: '#353b3a', roughness: .65, side: T.BackSide });
+  const hub = new T.CylinderGeometry(.111, .111, .154, 30, 1, true);
+  const reelGeometry = makeSpoolGeometry();
+  const spoolSizes = [1, .95, .98, .90];
+  for (const [i, color] of filament.entries()) {
     const scale = .8;
     const spool = shelve('shelf-spool-' + (i + 1), 'Катушка ' + (i + 1),
-      .61 + i * .022, middle + i * .205 * scale, .06, scale);
-    cylinder(spool, spoolRim, .39, .39, .041, 0, .0205, 0, 28);
-    cylinder(spool, filament[i], .328, .328, .13, 0, .1015, 0, 28);
-    cylinder(spool, spoolRim, .39, .39, .041, 0, .1805, 0, 28);
+      .61 + i * .012, middle + i * .205 * scale, .07 + i * .013, scale);
+    spool.rotation.y = .21 + i * .38;
+    const reel = group(spool, 0, 0, 0);
+    reel.scale.set(spoolSizes[i], 1, spoolSizes[i]);
+    mesh(reel, reelGeometry.coil, color, 0, 0, 0);
+    mesh(reel, hub, spoolCore, 0, .104, 0);
+    for (const y of [.004, .18]) {
+      mesh(reel, reelGeometry.flange, spoolRim, 0, y, 0);
+      mesh(reel, reelGeometry.lip, spoolLip, 0, y + .014, 0);
+    }
   }
 
-  const tools = shelve('shelf-tools', 'Коробка с инструментами', -.62, middle, .035, .76);
-  box(tools, storage, .90, .28, .77, 0, .14, 0);
-  box(tools, material('#984d3e'), .54, .19, .28, -.01, .37, -.236);
-  for (let i = 0; i < 4; i++) {
-    const handle = box(tools, material(i % 2 ? '#a96b63' : '#bc9d46'), .065, .24, .06, -.31 + i * .17, .35, .17);
-    handle.rotation.z = .65 - i * .42;
-  }
-
-  const files = shelve('shelf-files', 'Папки на полке', -.005, middle, -.14, .85);
-  for (const [x, folderHeight, color] of [[-.14, .63, '#556770'], [.01, .56, '#8f7961'], [.14, .49, '#576450']]) {
-    const file = group(files, x, .0075, 0, .03);
-    file.rotation.z = -.13;
-    box(file, material(color), .116, folderHeight, .34, 0, folderHeight / 2, 0);
-    box(file, paper, .070, .13, .004, 0, folderHeight - .13, .172);
-    cylinder(file, dark, .017, .017, .01, 0, .082, .174, 12).rotation.x = Math.PI / 2;
-  }
-
-  const upperBoxes = shelve('shelf-upper-boxes', 'Коробки на верхней полке', -.76, upper, .025, .62);
-  box(upperBoxes, cardboard, .70, .31, .60, 0, .155, -.005);
-  box(upperBoxes, material('#9b5143'), .32, .22, .41, .47, .11, .205);
-  box(upperBoxes, material('#818c8c'), .44, .19, .42, -.01, .405, .03).rotation.y = .14;
-  box(upperBoxes, pale, .25, .053, .013, -.02, .413, .242).rotation.y = .14;
-  box(upperBoxes, material('#756c59'), .30, .40, .17, .42, .20, -.355).rotation.z = -.04;
-
-  const paperScale = .64;
-  const sheets = shelve('shelf-paper', 'Стопка бумаги', -.11, upper, .055, paperScale);
-  for (let i = 0; i < 5; i++) {
-    const sheet = box(sheets, i % 2 ? pale : paper, .83, .019, .64, i * .014, .0095 + i * .017, 0);
-    sheet.rotation.y = (i - 2) * .045;
-  }
-  const cases = shelve('shelf-cases', 'Коробка и футляры', -.11, upper + .087 * paperScale, .055, .65);
-  box(cases, cardboard, .68, .33, .64, 0, .165, -.02);
-  box(cases, paper, .18, .13, .012, .16, .175, .306);
-  box(cases, storage, .52, .11, .45, -.03, .385, -.006).rotation.y = .12;
-  box(cases, material('#ad8852'), .42, .042, .34, -.02, .461, .025).rotation.y = -.04;
+  const files = shelve('shelf-files', 'Диссертация и автореферат', -.61, upper, .045, .93);
+  const sheets = shelve('shelf-paper', 'Стопка научных материалов', -.065, upper, .165, .93);
+  addDocumentArchive(files, sheets);
 
   const firefly = createProduct('lamp', .83);
   firefly.position.set(.595, upper, .035);
   shelf.add(firefly);
   register(firefly, 'firefly', 'Светлячок', 'shelf');
-  const largeSample = register(addPrintSample(shelf, material('#8d5f57'), -.70, height, .29, .22, .33), 'shelf-print-large', 'Большой макет', 'shelf');
-  const smallSample = register(addPrintSample(shelf, material('#777c73'), -.19, height, .33, .15, .25), 'shelf-print-small', 'Малый макет', 'shelf');
+  const prototypeCollection = group(shelf, 0, 0, 0);
+  const ringSample = register(addPrintSample(prototypeCollection, material('#8d5f57'), -.80, height, .24, .173, .267), 'shelf-print-large', 'Кольцевой макет', 'shelf');
+  const lacedSample = register(addLacedPrototype(prototypeCollection, -.40, height, .24), 'shelf-print-small', 'Синий каркас со шнуровкой', 'shelf');
+  const foldedSample = register(addFoldedPrototype(prototypeCollection, .032, height, .24), 'shelf-folded-sample', 'Складчатый макет', 'shelf');
   register(addHeadphones(shelf, upper - .065), 'headphones', 'Наушники', 'shelf');
   register(addMonstera(shelf, height), 'monstera', 'Монстера', 'shelf');
-  return { shelf, firefly, shelfBounds, drawing, largeSample, smallSample };
+  return { shelf, firefly, shelfBounds, drawing, prototypeCollection, ringSample, lacedSample, foldedSample };
 }
 
 function addChair(scene, desk, fabric, frame) {
@@ -979,27 +1350,167 @@ function addChair(scene, desk, fabric, frame) {
   return chair;
 }
 
-function addDeskTools(desk, register) {
-  const accessory = register(group(desk, -1.12, worktop, .19, -.11), 'desk-organizer', 'Органайзер для деталей', 'desk');
-  box(accessory, material('#667473'), .45, .028, .35, 0, .017, 0);
-  box(accessory, dark, .30, .05, .15, .011, .048, -.038);
-  for (let i = 0; i < 4; i++) {
-    const x = -.12 + i * .077;
-    cylinder(accessory, material('#888982', .44), .019, .018, .024, x, .044, .100 + .025 * Math.sin(i), 12);
-  }
-
+function addComputer(desk, register) {
   const tower = register(group(desk, 2.15, 0, -.52), 'computer', 'Системный блок', 'desk');
   box(tower, black, .57, .89, .90, 0, .47, 0);
   box(tower, dark, .54, .84, .035, 0, .47, .459);
   box(tower, material('#70658d'), .25, .019, .009, 0, .78, .479);
   for (let i = 0; i < 7; i++) box(tower, black, .34, .012, .008, 0, .62 - i * .037, .481);
-  tube(desk, dark, [[.23, 1.89, -.68], [.42, 1.52, -.97], [.64, .61, -1.05], [1.24, .035, -.91], [1.78, .042, -.81], [2.02, .32, -.94]], .016);
-  tower.attach(tube(desk, dark, [[2.26, .29, -.97], [2.46, .056, -.84], [2.66, .062, -.60], [2.64, .064, -.22], [2.38, .057, -.13]], .013));
+  roundedBox(tower, material('#626761', .8), .38, .37, .018, .009, 0, .57, -.455);
+  return tower;
+}
+
+function addDeskWiring(scene, desk, monitor, keyboard, tower) {
+  const strip = group(desk, 2.24, .036, -.65, .11);
+  roundedBox(strip, material('#6e6e61', .76), .454, .058, .126, .012, 0, 0, 0);
+  for (const x of [-.125, .015, .145]) cylinder(strip, dark, .031, .031, .008, x, .030, 0, 16);
+  const outlet = group(scene, 4.18, .235, backWall + .016);
+  roundedBox(outlet, material('#aaa494', .76), .25, .147, .037, .014, 0, 0, 0);
+  for (const x of [-.056, .056]) cylinder(outlet, dark, .041, .041, .008, x, 0, .022, 18).rotation.x = Math.PI / 2;
+
+  const port = (object, at, size) => {
+    roundedBox(object, black, ...size, .003, ...at);
+    return () => desk.worldToLocal(object.localToWorld(new T.Vector3(...at))).toArray();
+  };
+  const video = port(monitor, [.16, .69, -.229], [.066, .037, .042]);
+  const monitorPower = port(monitor, [-.09, .67, -.230], [.039, .030, .044]);
+  const keyboardUSB = port(keyboard, [-.46, .044, -.270], [.044, .031, .044]);
+  const towerVideo = port(tower, [-.102, .66, -.477], [.073, .039, .049]);
+  const towerUSB = port(tower, [.087, .56, -.474], [.049, .030, .041]);
+  const towerPower = port(tower, [.015, .25, -.471], [.066, .041, .038]);
+  const stripMonitor = port(strip, [-.125, .045, 0], [.058, .045, .052]);
+  const stripTower = port(strip, [.015, .046, 0], [.057, .044, .055]);
+  const stripInput = port(strip, [-.23, 0, 0], [.051, .031, .029]);
+  const wallPower = port(outlet, [-.056, 0, .047], [.055, .052, .065]);
+  const offset = (endpoint, shifts) => endpoint().map((value, index) => value + shifts[index]);
+
+  const cableHolder = group(desk, 0, 0, 0);
+  const rubber = material('#272929', .80);
+  const braid = material('#3b3d38', .93);
+  const cables = [];
+  const add = (radius, points, surface = rubber) => {
+    cables.push({ radius, points, mesh: mesh(cableHolder, new T.BufferGeometry(), surface, 0, 0, 0) });
+  };
+  add(.013, () => [
+    video(), offset(video, [.015, -.15, -.04]),
+    [.50, worktop + .034, -.986], [.63, worktop + .027, -1.143], [.69, 1.79, -1.197],
+    [1.00, 1.64, -1.10], [1.84, 1.58, -1.00], [2.03, .82, -1.08], towerVideo(),
+  ]);
+  add(.011, () => [
+    monitorPower(), offset(monitorPower, [-.05, -.15, -.039]),
+    [.14, worktop + .029, -1.058], [.36, worktop + .020, -1.163], [.43, 1.76, -1.196],
+    [.83, 1.62, -1.085], [1.68, 1.57, -.98], [1.78, .42, -1.01], [1.96, .092, -.86], stripMonitor(),
+  ]);
+  add(.010, () => [
+    keyboardUSB(), offset(keyboardUSB, [-.014, -.006, -.101]),
+    [-.29, worktop + .032, -.08], [-.40, worktop + .029, -.28], [-.45, worktop + .025, -.52],
+    [-.40, worktop + .022, -.76], [-.29, worktop + .018, -1.001],
+    [-.15, worktop + .016, -1.155], [-.10, 1.78, -1.193],
+    [.48, 1.60, -1.084], [1.60, 1.56, -1.01], [2.16, .79, -1.10], towerUSB(),
+  ], braid);
+  add(.015, () => [
+    towerPower(), offset(towerPower, [.10, -.094, -.06]), [2.58, .055, -.913],
+    [2.60, .047, -.73], [2.38, .062, -.65], stripTower(),
+  ]);
+  add(.015, () => [stripInput(), [1.89, .05, -.76], [1.98, .046, -1.01], [2.24, .06, -1.13],
+    offset(wallPower, [0, -.15, .04]), wallPower()]);
+
+  return function syncWiring() {
+    for (const cable of cables) {
+      const curve = new T.CatmullRomCurve3(cable.points().map(point => new T.Vector3(...point)));
+      cable.mesh.geometry.dispose();
+      cable.mesh.geometry = new T.TubeGeometry(curve, 40, cable.radius, 7, false);
+    }
+  };
+}
+
+function addPencil(parent, { base, direction, length, color, tipUp = true }) {
+  const pencil = group(parent, ...base);
+  const bodyGroup = group(pencil, 0, 0, 0);
+  const radius = .0135;
+  const axis = new T.Vector3(...direction).normalize();
+  if (!tipUp) bodyGroup.position.addScaledVector(axis, length);
+  bodyGroup.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), tipUp ? axis : axis.negate());
+  const lacquer = material(color, .59);
+  const wood = material('#d6ac80', .88);
+  const lead = material('#31302d', .76);
+  const ferrule = new T.MeshStandardMaterial({ color: '#b8aa87', metalness: .44, roughness: .48 });
+  const eraser = material('#b76658', .90);
+  const tipLength = .052;
+  const body = length - tipLength - .041;
+  cylinder(bodyGroup, lacquer, radius, radius, body, 0, .041 + body / 2, 0, 6);
+  cylinder(bodyGroup, ferrule, radius * 1.05, radius * 1.05, .025, 0, .032, 0, 12);
+  for (const y of [.024, .039]) cylinder(bodyGroup, ferrule, radius * 1.12, radius * 1.12, .0025, 0, y, 0, 12);
+  cylinder(bodyGroup, eraser, radius * .98, radius * .89, .020, 0, .011, 0, 12);
+  cylinder(bodyGroup, wood, .0038, radius, .039, 0, length - .0325, 0, 6);
+  cylinder(bodyGroup, lead, .0006, .0039, .013, 0, length - .0065, 0, 8);
+  return pencil;
+}
+
+function addCoffee(desk, register) {
+  const cup = register(group(desk, 2.78, worktop, .32, .23), 'coffee-cup', 'Кружка кофе', 'desk');
+  const glaze = material('#e7e7df', .34);
+  const profile = [
+    [0, .002], [.127, .002], [.145, .007], [.151, .020], [.151, .292],
+    [.150, .306], [.145, .311], [.138, .310], [.134, .303], [.134, .288],
+    [.133, .048], [.128, .036], [.116, .029], [0, .029],
+  ];
+  mesh(cup, new T.LatheGeometry(profile.map(point => new T.Vector2(...point)), 48), glaze, 0, 0, 0);
+  tube(cup, glaze, [
+    [-.145, .261, 0], [-.194, .262, 0], [-.240, .231, 0], [-.263, .178, 0],
+    [-.252, .120, 0], [-.208, .081, 0], [-.145, .076, 0],
+  ], .018);
+  const coffeeMap = texture(128, 128, (ctx, w, h) => {
+    const coffee = ctx.createRadialGradient(w * .37, h * .40, w * .04, w / 2, h / 2, w * .5);
+    coffee.addColorStop(0, '#603c26');
+    coffee.addColorStop(.72, '#3c2013');
+    coffee.addColorStop(.92, '#583019');
+    coffee.addColorStop(.97, '#9d6537');
+    coffee.addColorStop(1, '#663719');
+    ctx.fillStyle = coffee;
+    ctx.fillRect(0, 0, w, h);
+  });
+  const surface = mesh(cup, new T.CircleGeometry(.134, 44),
+    new T.MeshStandardMaterial({ map: coffeeMap, roughness: .32 }), 0, .275, 0);
+  surface.rotation.x = -Math.PI / 2;
+  surface.castShadow = false;
+
+  const steam = group(cup, 0, .302, 0);
+  const steamMap = texture(80, 80, (ctx, w, h) => {
+    const haze = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+    haze.addColorStop(0, '#fff5edc0');
+    haze.addColorStop(.45, '#fff5ed71');
+    haze.addColorStop(1, '#fff5ed00');
+    ctx.fillStyle = haze;
+    ctx.fillRect(0, 0, w, h);
+  });
+  const wisps = Array.from({ length: 8 }, () => {
+    const wisp = mesh(steam, new T.PlaneGeometry(1, 1), new T.MeshBasicMaterial({
+      map: steamMap, transparent: true, depthWrite: false, toneMapped: false, opacity: 0,
+    }), 0, 0, 0);
+    wisp.castShadow = wisp.receiveShadow = false;
+    return wisp;
+  });
+  const facing = new T.Quaternion();
+  return { root: steam, update(seconds, camera) {
+    steam.getWorldQuaternion(facing).invert().multiply(camera.quaternion);
+    for (const [i, wisp] of wisps.entries()) {
+      const t = (seconds * .48 + i / wisps.length) % 1;
+      const taper = (1 - t) ** 1.18;
+      const curl = t * Math.sin(t * 6 + seconds * .75);
+      wisp.position.set(.041 * curl + .047 * t * t, .44 * t, .016 * Math.sin(i * 2.4 + t * 5));
+      wisp.quaternion.copy(facing);
+      wisp.rotateZ(.29 * Math.sin(i * 2 + t * 6));
+      wisp.scale.set(.029 + .227 * taper, .091 + .069 * taper, 1);
+      wisp.material.opacity = .34 * taper * T.MathUtils.smoothstep(t, 0, .13);
+    }
+  } };
 }
 
 function addSuspendedPendant(anchor, register) {
   // Add the suspension around the existing editable pendant offsets.
-  const display = group(anchor, -.13, 1.10, -.27, .16);
+  const display = group(anchor, -.13, 1.10, -.035, .16);
+  const displayOrigin = display.position.clone();
   const object = register(group(display, 0, .11, -.10), 'pendant', 'Кулон «Шухов»', 'desk');
   const height = .69;
   const eye = height / 2 + .044;
@@ -1040,6 +1551,19 @@ function addSuspendedPendant(anchor, register) {
   cord.geometry.computeBoundingSphere();
   cord.geometry.boundingSphere.radius += .045;
 
+  const bounds = new T.Box3();
+  const displayWorld = new T.Vector3();
+  function keepInFrontOfWall() {
+    display.position.copy(displayOrigin);
+    const wallClearance = backWall + .022;
+    swivel.updateWorldMatrix(true, false);
+    const overlap = wallClearance - bounds.setFromObject(swivel).min.z;
+    if (overlap <= 0) return;
+    display.getWorldPosition(displayWorld);
+    displayWorld.z += overlap;
+    display.position.copy(anchor.worldToLocal(displayWorld));
+  }
+
   function update(seconds) {
     sway.rotation.set(.042 * Math.sin(seconds * 1.37), -.15 + .12 * Math.sin(seconds * .91),
       .066 * Math.sin(seconds * 1.16));
@@ -1052,11 +1576,12 @@ function addSuspendedPendant(anchor, register) {
       vertices.array[i + 2] = rest[i + 2] + bend * .54 * Math.cos(seconds * 1.38 + along);
     }
     vertices.needsUpdate = true;
+    keepInFrontOfWall();
   }
-  return { object, update };
+  return { object, update, keepInFrontOfWall };
 }
 
-export function buildWorkshop(scene, backdrop) {
+export function buildWorkshop(scene, backdrop, mark) {
   const editables = [];
   function register(object, id, label, section = 'room', axis = 'y') {
     editables.push({ object, id, label, section, axis });
@@ -1076,7 +1601,7 @@ export function buildWorkshop(scene, backdrop) {
   ceiling.castShadow = false;
   box(scene, trim, wallWidth, .12, .055, wallCenter, .06, backWall + .0275);
   box(scene, trim, .055, .12, roomDepth, rightWall - .0275, .06, sideWallCenter);
-  const desk = register(group(scene, .19, 0, -.97), 'desk', 'Рабочий стол');
+  const desk = register(group(scene, .19, 0, -.67), 'desk', 'Рабочий стол');
   const board = register(addPinboard(scene, desk.position.x - 1.97), 'board', 'Пробковая доска', 'room', 'z');
   const poster = addWallSketch(scene, desk.position.x + .48);
   const wallSketch = register(poster.object, 'wall-sketch', 'Чертёж на стене', 'room', 'z');
@@ -1124,7 +1649,7 @@ export function buildWorkshop(scene, backdrop) {
   register(printer.root, 'printer', 'Принтер A1', 'desk');
   const monitor = register(addMonitor(desk), 'monitor', 'Монитор', 'desk');
   register(addDeskMat(desk, surfaces.deskMat), 'desk-mat', 'Коврик на столе', 'desk');
-  register(addKeyboard(desk), 'keyboard', 'Клавиатура', 'desk');
+  const keyboard = register(addKeyboard(desk), 'keyboard', 'Клавиатура', 'desk');
   register(addMouse(desk), 'mouse', 'Мышь', 'desk');
   const chandelier = addChandelier(scene, desk);
   register(chandelier.object, 'chandelier', 'Люстра');
@@ -1158,22 +1683,27 @@ export function buildWorkshop(scene, backdrop) {
   contactSheet.castShadow = false;
   contactSheet.geometry.computeBoundingBox();
   const pencilHolder = createProduct('pencil-holder', .35);
-  pencilHolder.position.set(-.93, worktop, -.55);
+  pencilHolder.position.set(2.14, worktop, -.79);
   pencilHolder.rotation.y = .26;
   pencilHolder.traverse(object => { if (object.isMesh) object.receiveShadow = false; });
   desk.add(pencilHolder);
   register(pencilHolder, 'pencil-holder', 'Карандашница', 'desk');
-  const pencilWood = material('#ab7546');
-  const pencils = [];
-  for (let i = 0; i < 5; i++) {
-    pencils.push(rod(desk, i % 2 ? pale : pencilWood, [-1 + i * .033, 2.09, -.56], [-1.07 + i * .069, 2.48 + i % 2 * .06, -.53], .014));
-  }
-  for (const pencil of pencils) pencilHolder.attach(pencil);
-  const loosePencil = rod(desk, material('#b2854b'), [.86, 1.974, .90], [1.12, 1.974, 1.012], .018);
-  register(bundle(desk, [loosePencil], .99, 1.974, .956), 'loose-pencil', 'Карандаш на столе', 'desk');
-  addDeskTools(desk, register);
+  for (const pencil of [
+    { base: [-.037, .126, -.044], direction: [-.24, 1, -.07], length: .43, color: '#c5833f' },
+    { base: [-.021, .093, .009], direction: [.08, 1, .17], length: .37, color: '#b3a992', tipUp: false },
+    { base: [.012, .125, -.034], direction: [.10, 1, -.19], length: .49, color: '#547785', tipUp: false },
+    { base: [.032, .110, .027], direction: [.19, 1, .18], length: .40, color: '#8f4c43' },
+    { base: [-.009, .112, .045], direction: [-.095, 1, .07], length: .34, color: '#c3a059' },
+  ]) addPencil(pencilHolder, pencil);
+  register(addPencil(desk, {
+    base: [.88, worktop + .015, 1.017], direction: [1, 0, .11], length: .39, color: '#caa255',
+  }), 'loose-pencil', 'Карандаш на столе', 'desk');
 
-  const { shelf, firefly, shelfBounds, drawing, largeSample, smallSample } = addShelving(scene, register, surfaces);
+  const coffee = addCoffee(desk, register);
+  const tower = addComputer(desk, register);
+  const syncWiring = addDeskWiring(scene, desk, monitor, keyboard, tower);
+
+  const { shelf, firefly, shelfBounds, drawing, prototypeCollection, ringSample, lacedSample, foldedSample } = addShelving(scene, register, surfaces, mark);
   const table = createProduct('table', 1.26);
   table.position.set(desk.position.x - 4.04, 0, desk.position.z + .48);
   scene.add(table);
@@ -1207,19 +1737,21 @@ export function buildWorkshop(scene, backdrop) {
   });
 
   return {
-    printer, pendant, cat, window, editables, ceiling, poster,
-    exhibits: { about: board, engineering: monitor, contacts: folder, prototypes: largeSample, generator: drawing, printer: printer.root },
+    printer, pendant, cat, coffee, window, editables, ceiling, poster,
+    exhibits: { about: board, engineering: monitor, contacts: folder, prototypes: prototypeCollection, generator: drawing, printer: printer.root },
     overviewObjects: [board, wallSketch, desk, shelf, table, chair, chandelier.shade],
     syncLayout() {
       chandelier.sync();
       contacts.sync();
+      syncWiring();
+      pendant.keepInFrontOfWall();
     },
     zones: [
       { id: 'desk', object: desk, frame: {
         center: [0, worktop - .085, 0], size: [6.44, .17, 2.35], direction: [-.055, .39, 1],
         narrowDirection: [-.055, .55, 1], fill: true, focus: [0, 2.58, -.15],
       } },
-      { id: 'board', object: board, frame: { center: [0, 0, .046], size: [2.8, 1.78, .09], direction: [0, .045, 1] } },
+      { id: 'board', object: board, frame: { center: [0, 0, .046], size: [3.31, 1.78, .12], direction: [0, .045, 1] } },
       { id: 'shelf', object: shelf, frame: {
         center: shelfBounds.getCenter(new T.Vector3()).toArray(),
         size: shelfBounds.getSize(new T.Vector3()).toArray(),
@@ -1235,8 +1767,9 @@ export function buildWorkshop(scene, backdrop) {
       { id: 'pendant', object: pendant.object },
       { id: 'printer', object: printer.root },
       { id: 'generator', object: drawing },
-      { id: 'prototypes', object: largeSample },
-      { id: 'prototypes', object: smallSample },
+      { id: 'prototypes', object: ringSample },
+      { id: 'prototypes', object: lacedSample },
+      { id: 'prototypes', object: foldedSample },
     ],
     lettering: [
       { id: 'about', key: 'board', object: board, title: catalogue.about.label, edge: [[-1.4, .89, .046], [1.4, .89, .046]], at: .68, views: [null, 'desk', 'board'] },
@@ -1249,7 +1782,7 @@ export function buildWorkshop(scene, backdrop) {
       { id: 'cat', object: cat.object, title: 'Погладить кота', edge: [[-.3, -.14, -.44], [.3, -.14, -.44]], side: 1, rotation: 0, views: [null, 'desk'] },
       { id: 'shelf', object: shelf, title: 'Стеллаж', edge: [[-1.07, 1.9, .374], [-1.07, 3.96, .374]], at: .64, views: [null] },
       { id: 'firefly', object: firefly, title: catalogue.firefly.label, rim: { radius: [.404, .404], elevation: .787, gap: 10 }, views: [null, 'shelf'] },
-      { id: 'prototypes', object: largeSample, title: catalogue.prototypes.label, edge: [[-.22, 0, .18], [.40, 0, .18]], side: 1, views: [null, 'shelf'] },
+      { id: 'prototypes', object: ringSample, title: catalogue.prototypes.label, edge: [[-.22, 0, .18], [.40, 0, .18]], side: 1, views: [null, 'shelf'] },
       { id: 'generator', object: drawing, title: catalogue.generator.label, edge: [[-.43, 0, .14], [.43, 0, .14]], side: 1, views: [null, 'shelf'] },
     ],
   };

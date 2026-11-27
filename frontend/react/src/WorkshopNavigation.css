@@ -1,15 +1,16 @@
-/* The room index is set like the lettering painted next to the objects. */
-.room-index {
+/* Shared visual treatment for navigation around the room. */
+#workshop {
   --index-ink: #f7efdc;
   --index-lit: #fff2ce;
   --index-muted: #d9caa6;
   --index-shadow: 0 1px 2px #201912, 0 0 6px #201912;
   --index-rule: #fff3d63d;
-  --index-oxide: #783f30;
-  --index-oxide-hover: #633125;
+  --index-panel: #15130fed;
+  --index-hover: #f7efdc14;
   --index-mono: "PT Mono", "IBM Plex Mono", Consolas, "Courier New", monospace;
-  position: relative;
 }
+
+.room-index { position: relative }
 
 #workshop .workshop-footer { flex: 1; min-width: 0 }
 
@@ -59,7 +60,7 @@
   list-style: none;
 }
 
-.room-index-link {
+:is(.room-index-link, .room-index-contact) {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
@@ -72,44 +73,34 @@
   white-space: nowrap;
 }
 
-.room-index-link span {
+:is(.room-index-link, .room-index-contact) span {
   padding: 4px 0 5px;
   border-bottom: 1px solid transparent;
   transition: color .15s ease, border-color .15s ease;
 }
 
-.room-index-link:is(:hover, :focus-visible) span {
+:is(.room-index-link, .room-index-contact):is(:hover, :focus-visible) span {
   color: var(--index-lit);
   border-bottom-color: currentColor;
 }
 
-#workshop .room-index :is(.room-index-link, .room-index-toggle, .room-index-close):focus-visible {
+#workshop .room-index :is(.room-index-link, .room-index-contact, .room-index-toggle, .room-index-close):focus-visible {
   outline: 2px solid #f6dfad;
   outline-offset: -3px;
   border-radius: 2px;
 }
 
 .room-index-contact {
-  display: inline-flex;
   flex: none;
-  align-items: center;
-  justify-content: center;
   gap: 8px;
-  min-height: 44px;
   margin-left: auto;
-  padding: 0 18px;
-  background: var(--index-oxide);
-  color: #fff5e2;
-  box-shadow: 0 4px 14px #120f0b66;
-  font: 650 14px/1 Inter, Arial, sans-serif;
-  transition: background .15s ease;
 }
 
-.room-index-contact:hover { background: var(--index-oxide-hover) }
+.room-index-contact span { padding-block: 5px 4px }
 
-#workshop .room-index-contact:focus-visible {
-  outline: 2px solid #f6dfad;
-  outline-offset: 2px;
+.room-index-contact svg {
+  transform: translateY(-1px);
+  filter: drop-shadow(0 1px 2px #201912);
 }
 
 .room-index svg {
@@ -119,16 +110,11 @@
   stroke-width: 1.6;
 }
 
-/* The menu points at the same object and the same painted label. */
+/* Menu focus also highlights the corresponding scene object. */
 #object-halos .object-halo.is-hinted {
   opacity: 1;
   filter: url(#halo-hint);
   transition: opacity .18s;
-}
-
-#workshop .object-lettering.is-hinted {
-  color: #fff8e6;
-  text-shadow: 0 1px 2px #201912, 0 0 10px #ffd98a, 0 0 18px #ffd98a99;
 }
 
 /* Small screens open the full list from a single control. */
@@ -170,7 +156,7 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: max(20px, env(safe-area-inset-top)) 26px max(24px, env(safe-area-inset-bottom));
-  background: #15130fe3;
+  background: var(--index-panel);
   backdrop-filter: blur(6px);
 }
 
@@ -233,12 +219,15 @@
 }
 
 .room-index-sheet .room-index-contact {
-  width: min(100%, 420px);
+  width: 100%;
   margin: auto 0 0;
+  padding-inline: 0;
+  border-top: 1px solid var(--index-rule);
 }
 
 @media (max-width: 1239px) {
   .room-index-link,
+  .room-index-contact,
   .room-index-toggle {
     padding-inline: 7px;
     font-size: 12px;
@@ -246,7 +235,6 @@
   }
 
   .room-index-strip ul { margin-left: -7px }
-  .room-index-contact { padding-inline: 14px }
 }
 
 /* Keep in sync with compactLayout in WorkshopNavigation.jsx. */
@@ -257,5 +245,5 @@
 
 @media (prefers-reduced-motion: reduce) {
   .room-index-link span,
-  .room-index-contact { transition: none }
+  .room-index-contact span { transition: none }
 }

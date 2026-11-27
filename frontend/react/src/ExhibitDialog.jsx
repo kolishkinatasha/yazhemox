@@ -1,3 +1,4 @@
+import { roomIndexControl } from './workshop/exhibit-navigation.js'
 import * as Dialog from '@radix-ui/react-dialog'
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Box, Expand, Images, Mail, X } from 'lucide-react'
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
@@ -41,6 +42,39 @@ export function OrderActions({ subject, label }) {
   )
 }
 
+function PrototypeStudies({ gallery, photoIndex, mode, onSelect }) {
+  const showingModel = mode === 'model'
+  const selected = gallery[photoIndex]
+
+  return (
+    <section className="prototype-studies" aria-labelledby="prototype-studies-heading">
+      <h3 id="prototype-studies-heading">{showingModel ? 'Макеты на стеллаже' : 'Пробы из мастерской'}</h3>
+      {showingModel && <p className="prototype-model-note">Кольцевой макет, каркас со шнуровкой и складчатый образец можно повернуть и рассмотреть с разных сторон.</p>}
+      <ul className="prototype-study-list">
+        {gallery.map((photo, index) => {
+          const active = !showingModel && index === photoIndex
+          return (
+            <li key={photo.src} className="prototype-study" data-active={active || undefined}>
+              <button type="button" onClick={() => onSelect(index)} aria-pressed={active}>
+                <img src={`/${photo.src}`} alt="" />
+                <span>{photo.caption}</span>
+                <ArrowRight size={16} aria-hidden="true" />
+              </button>
+              {active && <p>{photo.note}</p>}
+            </li>
+          )
+        })}
+      </ul>
+      {!showingModel && (
+        <div className="prototype-study-mobile-note">
+          <h4>{selected.caption}</h4>
+          <p>{selected.note}</p>
+        </div>
+      )}
+    </section>
+  )
+}
+
 export default function ExhibitDialog({ exhibitId, entry, photos = [], research, researchSection, parentTitle, backLabel, returningFrom, shelf, sceneExhibits, zoom, onExit, onBack, onNavigate, onZoom }) {
   const [mode, setMode] = useState(zoom || (photos.length && !shelf) ? 'photo' : 'model')
   const [photoIndex, setPhotoIndex] = useState(0)
@@ -59,6 +93,7 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
   const gallery = Array.isArray(photos) ? photos : []
   const activePhoto = gallery[photoIndex] ?? gallery[0]
   const isTable = exhibitId === 'portfolio'
+  const isPrototypes = exhibitId === 'prototypes' && gallery.length > 0
   const [photoRatios, setPhotoRatios] = useState({})
   const photoRatio = photoRatios[activePhoto?.src] ?? 2 / 3
   const activeTable = tables[tableIndex]
@@ -139,6 +174,11 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
     setMode(nextMode)
   }
 
+  function selectPrototype(index) {
+    selectPhoto(index)
+    switchMode('photo')
+  }
+
   const orderSubject = isTable ? `стол Hyperline ${activeTable.name}` : entry.order
 
   return (
@@ -166,7 +206,7 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
             if (location.hash) return
             const target = opener.current instanceof HTMLElement && opener.current !== document.body && opener.current.getClientRects().length
               ? opener.current
-              : document.getElementById('browse')
+              : roomIndexControl(exhibitId)
             target?.focus({ preventScroll: true })
           }}
         >
@@ -181,7 +221,7 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
                   <button type="button" aria-pressed={mode === 'photo'} className={mode === 'photo' ? 'active' : ''} onClick={() => switchMode('photo')}>
                     <Images size={15} aria-hidden="true" /> {exhibitId === 'engineering' ? 'Иллюстрации' : 'Фотографии'}
                   </button>
-                  {entry.model && <button type="button" aria-pressed={mode === 'model'} className={mode === 'model' ? 'active' : ''} onClick={() => switchMode('model')}><Box size={15} aria-hidden="true" /> 3D-модель</button>}
+                  {entry.model && <button type="button" aria-pressed={mode === 'model'} className={mode === 'model' ? 'active' : ''} onClick={() => switchMode('model')}><Box size={15} aria-hidden="true" /> {isPrototypes ? 'Макеты в 3D' : '3D-модель'}</button>}
                 </div>
               )}
 
@@ -213,7 +253,7 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
                       </Dialog.Trigger>
                       <PhotoLightbox photo={activePhoto} index={photoIndex} count={gallery.length} move={movePhoto} onKeyDown={handlePhotoKeys} onClose={onBack} fallbackAlt={entry.title} />
                     </Dialog.Root>
-                    {activePhoto.caption && <p>{activePhoto.caption}</p>}
+                    {activePhoto.caption && !isPrototypes && <p>{activePhoto.caption}</p>}
                   </div>
                 </div>
               ) : entry.model ? (
@@ -229,7 +269,15 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
                   {mode === 'photo' ? (
                     <>
                       <span className="photo-position" aria-live="polite">{exhibitId === 'engineering' ? 'Иллюстрация' : 'Снимок'} {photoIndex + 1} из {gallery.length}</span>
-                      {gallery.length > 1 && (
+                      {isPrototypes && (
+                        <div className="prototype-mobile-picker" role="group" aria-label="Выбрать опыт">
+                          {gallery.map((photo, index) => (
+                            <button type="button" key={photo.src} aria-pressed={index === photoIndex}
+                              onClick={() => selectPrototype(index)}>{photo.shortTitle}</button>
+                          ))}
+                        </div>
+                      )}
+                      {!isPrototypes && gallery.length > 1 && (
                         <div className="photo-thumbs" role="group" aria-label={exhibitId === 'engineering' ? 'Иллюстрации' : 'Фотографии'}>
                           {gallery.map((photo, index) => (
                             <button type="button" key={photo.src} aria-label={photo.caption || photo.alt} aria-pressed={index === photoIndex} onClick={() => selectPhoto(index)}>
@@ -325,8 +373,8 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
 
                 {entry.specs?.length > 0 && <dl className="object-specs">{entry.specs.map(([label, value]) => <Fragment key={label}><dt>{label}</dt><dd>{value}</dd></Fragment>)}</dl>}
 
-                {exhibitId === 'prototypes' && entry.links?.[0] && (
-                  <ResourceLink link={entry.links[0]} action onNavigate={onNavigate} />
+                {isPrototypes && (
+                  <PrototypeStudies gallery={gallery} photoIndex={photoIndex} mode={mode} onSelect={selectPrototype} />
                 )}
 
                 {research && (researchPage ? (
@@ -374,7 +422,7 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
                   </div>
                 )}
 
-                {!isContacts && entry.links?.length > 0 && exhibitId !== 'prototypes' && (
+                {!isContacts && entry.links?.length > 0 && (
                   <div className="resource-list">
                     {entry.links.map((link) => <ResourceLink key={link.href} link={link} onNavigate={onNavigate} />)}
                   </div>

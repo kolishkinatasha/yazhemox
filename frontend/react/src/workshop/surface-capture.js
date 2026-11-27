@@ -9,9 +9,12 @@ export function captureSurface(element, renderCanvas, { preview = false, interme
 
   function schedule() {
     pending = true
-    if (!stopped && ready && !busy && !frame && (preview || !host.hasAttribute('data-approaching'))) {
-      frame = requestAnimationFrame(capture)
-    }
+    if (stopped || !ready || busy || frame) return
+    if (preview && !host.style.getPropertyValue('--monitor-width')) return
+    if (!preview && host.hasAttribute('data-approaching')) return
+    if (element.querySelector('[data-surface-pending]')) return
+    if (Array.from(element.querySelectorAll('img')).some(image => !image.complete)) return
+    frame = requestAnimationFrame(capture)
   }
 
   async function capture() {
@@ -63,7 +66,7 @@ export function captureSurface(element, renderCanvas, { preview = false, interme
   placement.observe(host, { attributes: true, attributeFilter: ['data-approaching', 'style'] })
   const size = new ResizeObserver(schedule)
   size.observe(element)
-  const events = ['scroll', 'load', 'focusin', 'focusout', 'surface-render']
+  const events = ['scroll', 'load', 'error', 'focusin', 'focusout', 'surface-render']
   for (const event of events) element.addEventListener(event, schedule, true)
 
   Promise.all([import('html2canvas'), document.fonts.ready]).then(([module]) => {

@@ -1,3 +1,4 @@
+import { roomIndexControl } from './workshop/exhibit-navigation.js'
 import * as Dialog from '@radix-ui/react-dialog'
 import { ArrowDown, ArrowLeft, ArrowRight, Expand, Minus, Plus, RotateCcw, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
@@ -81,7 +82,7 @@ export default function FireflyConcept({ concept, entry, photos, zoom, onBack, o
             event.preventDefault()
             const target = opener.current instanceof HTMLElement && opener.current.getClientRects().length && opener.current !== document.body
               ? opener.current
-              : document.getElementById('browse')
+              : roomIndexControl('firefly')
             target?.focus({ preventScroll: true })
           }}
         >

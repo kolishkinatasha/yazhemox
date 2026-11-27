@@ -63,7 +63,7 @@
 #workshop #view-tools button { justify-content: space-between }
 #workshop #view-tools button:hover { background: #ded0b1 }
 
-#workshop :is(#view-tools, #help-panel) {
+#workshop #view-tools {
   border: 1px solid var(--nav-line);
   border-radius: 0;
   background: var(--nav-paper);
@@ -83,7 +83,15 @@
   width: 44px;
   height: 44px;
   padding: 0;
-  font-size: 16px;
+  border: 1px solid var(--index-rule);
+  background: var(--index-panel);
+  color: var(--index-ink);
+  font: 700 16px/1 var(--index-mono);
+}
+
+#workshop #help:is(:hover, [aria-expanded="true"]) {
+  border-color: var(--index-muted);
+  color: var(--index-lit);
 }
 
 .view-settings-toggle,
@@ -111,7 +119,13 @@
   max-width: none;
   max-height: calc(100dvh - 100px);
   overflow: auto;
-  padding: 14px 18px 16px;
+  padding: 12px 18px 15px;
+  border: 1px solid var(--index-rule);
+  border-radius: 0;
+  background: var(--index-panel);
+  color: var(--index-ink);
+  box-shadow: 0 12px 28px #110e0b73;
+  backdrop-filter: blur(6px);
 }
 
 #workshop :is(#room-switch, #zone-back, .lettering-actions button) {
@@ -129,7 +143,7 @@
   outline-offset: 2px;
 }
 
-#workshop :is(#view-tools, #help-panel) button:focus-visible {
+#workshop #view-tools button:focus-visible {
   outline: 2px solid var(--nav-red);
   outline-offset: -2px;
 }
@@ -140,11 +154,6 @@
 
 #workshop.lettering-editing .top-actions,
 #workshop.lettering-editing .workshop-footer { visibility: hidden }
-
-#workshop:not(.lettering-editing) .object-lettering:is(:hover, :focus-visible) {
-  color: #fff2ce;
-  text-shadow: 0 1px 4px #18130d, 0 0 8px #18130d;
-}
 
 #workshop :is(#camera-panel, #layout-panel, #lettering-tools) {
   border-radius: 0;
@@ -233,10 +242,6 @@
   #workshop :is(#camera-panel, #layout-panel) :is(select, input[type="number"]) { font-size: 16px }
 }
 
-#workshop #help-panel {
-  background-image: url('/media/ui/paper-fibre.png');
-}
-
 .help-heading {
   display: flex;
   align-items: center;
@@ -246,9 +251,10 @@
 
 .help-heading h2 {
   margin: 0;
-  font-size: 20px;
-  font-weight: 850;
-  letter-spacing: -.045em;
+  color: var(--index-ink);
+  font: 650 14px/1.25 Inter, Arial, sans-serif;
+  letter-spacing: .11em;
+  text-transform: uppercase;
 }
 
 #workshop #help-close {
@@ -259,11 +265,11 @@
   margin-right: -8px;
   padding: 0;
   border: 0;
-  color: var(--nav-ink);
+  color: var(--index-ink);
   font: 24px/1 Arial, sans-serif;
 }
 
-#workshop #help-panel p { margin: 2px 0 13px; color: #514937; font-size: 13px; line-height: 1.5 }
+#workshop #help-panel p { margin: 0 0 13px; color: var(--index-muted); font-size: 13px; line-height: 1.5 }
 
 #help-backdrop { display: none }
 
@@ -289,10 +295,10 @@
   margin: 0;
   padding: 6px 2px;
   border: 0;
-  border-top: 1px solid var(--nav-line);
+  border-top: 1px solid var(--index-rule);
   border-radius: 0;
   background: transparent;
-  color: var(--nav-ink);
+  color: var(--index-ink);
   text-align: left;
   font-size: 13px;
   font-weight: 600;
@@ -301,16 +307,22 @@
 #workshop #zone-list :is([data-zone], #lettering-start)::after {
   content: '↗';
   margin: 0 4px 0 0;
-  color: var(--nav-red);
+  color: var(--index-muted);
 }
-#workshop #zone-list button:hover { background: #e5d8bd }
+#workshop #zone-list button:hover,
+#workshop #help-close:hover { background: var(--index-hover); color: var(--index-lit) }
+
+#workshop #help-panel button:focus-visible {
+  outline: 2px solid var(--index-lit);
+  outline-offset: -2px;
+}
 #workshop .help-tools {
   display: grid;
   margin-top: 7px;
-  border-top: 1px solid var(--nav-line);
+  border-top: 1px solid var(--index-rule);
 }
 #workshop .help-tools button:first-child { border-top: 0 }
-#workshop .help-tools button { font-weight: 500; color: #514937 }
+#workshop .help-tools button { font-weight: 500; color: var(--index-muted) }
 #workshop #zone-list button[hidden] { display: none }
 
 #workshop :is(#zone-back, #room-switch) {
@@ -327,25 +339,24 @@
 #workshop :is(#zone-back, #room-switch):enabled:hover { background: #dfcfaf }
 #workshop :is(#zone-back, #room-switch):focus-visible { outline-color: var(--nav-red); outline-offset: -3px }
 
-#workshop :is(#help-close, #camera-close, #layout-close) {
+#workshop :is(#camera-close, #layout-close) {
   border-radius: 6px;
   background: transparent;
 }
 
 @media (hover: hover) {
-  #workshop :is(#help-close, #camera-close, #layout-close):enabled:hover { background: #783f301a }
+  #workshop :is(#camera-close, #layout-close):enabled:hover { background: #783f301a }
 }
 
 .printer-toggle-state {
   padding: 4px 5px;
-  border-radius: 3px;
-  background: #d8ccb0;
-  color: #514937;
+  border: 1px solid var(--index-rule);
+  color: var(--index-muted);
   font: 700 10px/1 var(--nav-type);
   text-align: center;
 }
 
 #printer-toggle[aria-pressed="true"] .printer-toggle-state {
-  background: var(--nav-red);
-  color: #fff5e2;
+  background: var(--index-hover);
+  color: var(--index-lit);
 }

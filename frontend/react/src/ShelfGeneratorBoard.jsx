@@ -7,7 +7,7 @@ import { useResearchMonitorLayout } from './ResearchMonitor.jsx'
 import { catalogue } from './workshop/workshop-catalog.js'
 import { photos } from './workshop/workshop-photos.js'
 import { shelfDefaults, shelfFields } from './workshop/shelf-preview.js'
-import { exhibitNavigation } from './workshop/exhibit-navigation.js'
+import { exhibitNavigation, roomIndexControl } from './workshop/exhibit-navigation.js'
 import { setSurfaceImage, setSurfacePreview, surfaceControlAt } from './workshop/scene.js'
 import { captureSurface } from './workshop/surface-capture.js'
 import './ShelfGeneratorBoard.css'
@@ -20,6 +20,7 @@ function ShelfModel({ dimensions, interactive }) {
   const container = useRef(null)
   const hint = useRef(null)
   const viewer = useRef(null)
+  const [ready, setReady] = useState(false)
   const latest = useRef(dimensions)
   latest.current = dimensions
 
@@ -28,9 +29,11 @@ function ShelfModel({ dimensions, interactive }) {
     import('./workshop/exhibit-viewer.js').then(({ createExhibitViewer }) => {
       if (cancelled) return
       viewer.current = createExhibitViewer(container.current, hint.current, { texturePreview: true })
-      viewer.current.show('generator', latest.current)
+      return viewer.current.show('generator', latest.current)
     }).catch(() => {
       if (!cancelled) hint.current.textContent = 'Не удалось открыть эскиз'
+    }).finally(() => {
+      if (!cancelled) setReady(true)
     })
     return () => {
       cancelled = true
@@ -45,7 +48,8 @@ function ShelfModel({ dimensions, interactive }) {
 
   return (
     <>
-      <div ref={container} className="shelf-generator-model" tabIndex={interactive ? 0 : undefined}
+      <div ref={container} className="shelf-generator-model" data-surface-pending={!ready ? '' : undefined}
+        tabIndex={interactive ? 0 : undefined}
         aria-label="Модель этажерки. Стрелки поворачивают эскиз" />
       <span ref={hint} className="shelf-generator-hint">Подготовка эскиза…</span>
     </>
@@ -183,7 +187,7 @@ export default function ShelfGeneratorBoard({ exhibit }) {
             const previous = opener.current
             const target = previous instanceof HTMLElement && previous !== document.body && previous.getClientRects().length
               ? previous
-              : document.getElementById('browse')
+              : roomIndexControl('generator')
             target?.focus({ preventScroll: true })
           }}
         >
