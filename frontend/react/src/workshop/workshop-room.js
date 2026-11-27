@@ -2,7 +2,7 @@ import * as T from 'three';
 import { createA1 } from './printer.js';
 import { createProduct } from './product-models.js';
 import { drawCork, leafTexture, random, texture, workshopMaterials } from './workshop-materials.js';
-import { addWorkshopCat } from './workshop-cat.js';
+import { addSeatedCat } from './seated-cat.js';
 import { catalogue } from './workshop-catalog.js';
 import { cityTexture } from './workshop-city.js';
 import { roundedBoxGeometry } from './workshop-geometry.js';
@@ -256,11 +256,11 @@ function addPinboard(scene, x) {
   return board;
 }
 
-function addWallSketch(scene, x) {
+function addWallSketch(scene, x, sideView = false) {
   const sketch = group(scene, x, 4.68, backWall + .021);
-  const width = 1.05, height = 1.29;
-  sketch.rotation.z = -.046;
-  const map = texture(340, 410, (ctx, w, h) => {
+  const width = sideView ? 2.02 : 1.05, height = sideView ? 1.38 : 1.29;
+  sketch.rotation.z = sideView ? 0 : -.046;
+  const map = texture(sideView ? 600 : 340, 410, (ctx, w, h) => {
     ctx.fillStyle = '#f7f2e9';
     ctx.fillRect(0, 0, w, h);
     ctx.strokeStyle = '#a8b0ad5c';
@@ -275,7 +275,17 @@ function addWallSketch(scene, x) {
       ctx.lineTo(w - 36, line);
     }
     ctx.stroke();
-    technicalSketch(ctx, 76, 93, 184, 207, '#845552');
+    technicalSketch(ctx, (w - 184) / 2, 93, 184, 207, '#845552');
+    if (sideView) {
+      ctx.strokeStyle = '#637077';
+      ctx.strokeRect(w / 2 - 107, 76, 215, 247);
+      ctx.setLineDash([4, 5]);
+      ctx.beginPath();
+      ctx.moveTo(w / 2, 65);
+      ctx.lineTo(w / 2, 334);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
     ctx.strokeStyle = '#637077';
     ctx.strokeRect(229, 350, 76, 25);
     ctx.beginPath();
@@ -285,14 +295,109 @@ function addWallSketch(scene, x) {
     ctx.lineTo(122, 363);
     ctx.stroke();
   });
-  box(sketch, material('#cfc6b6'), 1.054, 1.294, .014, 0, 0, -.009);
-  mesh(sketch, new T.PlaneGeometry(width, height), new T.MeshStandardMaterial({ map, roughness: 1 }), 0, 0, 0);
-  const tape = material('#c9b28b');
-  box(sketch, tape, .14, .075, .012, -.43, .61, .009).rotation.z = .39;
-  box(sketch, tape, .14, .075, .012, .44, .61, .009).rotation.z = -.3;
-  return { object: sketch, topEdge: [
-    new T.Vector3(-width / 2, height / 2, 0), new T.Vector3(width / 2, height / 2, 0),
-  ] };
+  box(sketch, material('#cfc6b6'), width + .004, height + .004, .014, 0, 0, -.009);
+  const sheet = mesh(sketch, new T.PlaneGeometry(width, height),
+    sideView ? new T.MeshBasicMaterial({ map, toneMapped: false }) : new T.MeshStandardMaterial({ map, roughness: 1 }), 0, 0, 0);
+  sheet.name = 'hyperline-poster-sheet';
+  sheet.geometry.computeBoundingBox();
+  if (sideView) {
+    const tapeMap = texture(168, 60, (ctx, w, h) => {
+      ctx.beginPath();
+      ctx.moveTo(3, 4);
+      ctx.lineTo(w - 6, 2);
+      ctx.lineTo(w - 2, 12);
+      ctx.lineTo(w - 7, 21);
+      ctx.lineTo(w - 3, 30);
+      ctx.lineTo(w - 8, 40);
+      ctx.lineTo(w - 4, h - 3);
+      ctx.lineTo(4, h - 2);
+      ctx.lineTo(7, 45);
+      ctx.lineTo(3, 34);
+      ctx.lineTo(8, 24);
+      ctx.lineTo(4, 15);
+      ctx.closePath();
+      ctx.clip();
+      ctx.fillStyle = '#d8bb84ba';
+      ctx.fillRect(0, 0, w, h);
+      for (let y = 5; y < h; y += 3) {
+        ctx.fillStyle = y % 2 ? '#f3dbad2c' : '#936b4322';
+        ctx.fillRect(0, y, w, 1);
+      }
+    });
+    const tape = new T.MeshBasicMaterial({ map: tapeMap, transparent: true, depthWrite: false, toneMapped: false });
+    const strip = new T.PlaneGeometry(.165, .058);
+    for (const [x, angle] of [[-width / 2 + .10, .35], [width / 2 - .105, -.27]]) {
+      const piece = mesh(sketch, strip, tape, x, height / 2 - .004, .009);
+      piece.rotation.z = angle;
+      piece.castShadow = false;
+    }
+  } else {
+    const tape = material('#c9b28b');
+    box(sketch, tape, .14, .075, .012, -width / 2 + .095, height / 2 - .035, .009).rotation.z = .39;
+    box(sketch, tape, .14, .075, .012, width / 2 - .085, height / 2 - .035, .009).rotation.z = -.3;
+  }
+  return sketch;
+}
+
+function addHyperlineNotes(poster) {
+  const ink = '#5c5862';
+  const tape = material('#ad926c');
+
+  const sketch = group(poster, 1.34, .24, .006);
+  sketch.rotation.z = -.105;
+  const sketchMap = texture(230, 280, (ctx, width, height) => {
+    ctx.fillStyle = '#e4e0d0';
+    ctx.fillRect(0, 0, width, height);
+    ctx.strokeStyle = '#9ca7a646';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let line = 16; line < height; line += 15) {
+      ctx.moveTo(0, line);
+      ctx.lineTo(width, line);
+    }
+    for (let line = 10; line < width; line += 15) {
+      ctx.moveTo(line, 0);
+      ctx.lineTo(line, height);
+    }
+    ctx.stroke();
+    ctx.fillStyle = ink;
+    ctx.font = '18px sans-serif';
+    ctx.fillText('Узел крепления', 28, 45);
+    ctx.strokeStyle = ink;
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(36, 117, 158, 18);
+    ctx.beginPath();
+    ctx.roundRect(102, 76, 19, 105, 8);
+    ctx.moveTo(55, 229);
+    ctx.lineTo(84, 135);
+    ctx.lineTo(112, 114);
+    ctx.moveTo(172, 229);
+    ctx.lineTo(140, 135);
+    ctx.lineTo(112, 114);
+    ctx.stroke();
+    ctx.fillText('натяжение', 122, 205);
+  });
+  mesh(sketch, new T.PlaneGeometry(.43, .52), new T.MeshStandardMaterial({ map: sketchMap, roughness: .96 }), 0, 0, 0);
+  box(sketch, tape, .125, .056, .009, -.045, .25, .008).rotation.z = .18;
+
+  const note = group(poster, 1.38, -.30, .009);
+  note.rotation.z = .15;
+  const noteMap = texture(235, 180, (ctx, width, height) => {
+    ctx.fillStyle = '#d8bd7e';
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = '#524334';
+    ctx.font = 'italic 23px sans-serif';
+    ctx.fillText('Проверить шаг', 22, 65);
+    ctx.fillText('и натяжение', 24, 100);
+    ctx.strokeStyle = '#845552';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(23, 111);
+    ctx.quadraticCurveTo(94, 114, 173, 108);
+    ctx.stroke();
+  });
+  mesh(note, new T.PlaneGeometry(.40, .31), new T.MeshStandardMaterial({ map: noteMap, roughness: .96 }), 0, 0, 0);
+  box(note, tape, .082, .044, .009, .045, .146, .007).rotation.z = -.22;
 }
 
 function addMonitor(desk) {
@@ -1603,8 +1708,11 @@ export function buildWorkshop(scene, backdrop, mark) {
   box(scene, trim, .055, .12, roomDepth, rightWall - .0275, .06, sideWallCenter);
   const desk = register(group(scene, .19, 0, -.67), 'desk', 'Рабочий стол');
   const board = register(addPinboard(scene, desk.position.x - 1.97), 'board', 'Пробковая доска', 'room', 'z');
-  const poster = addWallSketch(scene, desk.position.x + .48);
-  const wallSketch = register(poster.object, 'wall-sketch', 'Чертёж на стене', 'room', 'z');
+  const tableSketch = addWallSketch(scene, -3.36, true);
+  tableSketch.position.y = 2.65;
+  addHyperlineNotes(tableSketch);
+  register(tableSketch, 'table-sketch', 'Чертёж Hyperline', 'room', 'z');
+  const wallSketch = register(addWallSketch(scene, desk.position.x + .48), 'wall-sketch', 'Чертёж на стене', 'room', 'z');
   woodenWorktop(desk, surfaces.desk, 6.44, .17, 2.35);
   roundedBox(desk, deskFrame, 5.98, .13, .084, .010, 0, 1.72, .88);
   const fastener = material('#636360', .65);
@@ -1707,10 +1815,19 @@ export function buildWorkshop(scene, backdrop, mark) {
   const table = createProduct('table', 1.26);
   table.position.set(desk.position.x - 4.04, 0, desk.position.z + .48);
   scene.add(table);
+  table.traverse(object => {
+    if (object.material?.name !== 'plywoodDark') return;
+    object.material = object.material.clone();
+    object.material.color.set('#48433e');
+  });
+  const tableLight = new T.SpotLight('#ffe5c6', 23, 6, .37, .78);
+  tableLight.position.set(-.98, 3.27, 1.52);
+  tableLight.target.position.set(0, .72, 0);
+  table.add(tableLight, tableLight.target);
   register(table, 'hyperline', 'Столик Hyperline');
   const chair = register(addChair(scene, desk, surfaces.chair, powderCoat), 'chair', 'Кресло');
 
-  const cat = addWorkshopCat(chair);
+  const cat = addSeatedCat(chair);
 
   const contacts = addContactShadows(scene);
   contacts.add(desk, 0, 0, 7.1, 3.2, .25);
@@ -1737,8 +1854,8 @@ export function buildWorkshop(scene, backdrop, mark) {
   });
 
   return {
-    printer, pendant, cat, coffee, window, editables, ceiling, poster,
-    exhibits: { about: board, engineering: monitor, contacts: folder, prototypes: prototypeCollection, generator: drawing, printer: printer.root },
+    printer, pendant, cat, coffee, window, editables, ceiling,
+    exhibits: { portfolio: tableSketch, about: board, engineering: monitor, contacts: folder, prototypes: prototypeCollection, generator: drawing, printer: printer.root },
     overviewObjects: [board, wallSketch, desk, shelf, table, chair, chandelier.shade],
     syncLayout() {
       chandelier.sync();
@@ -1763,6 +1880,7 @@ export function buildWorkshop(scene, backdrop, mark) {
       { id: 'engineering', object: monitor },
       { id: 'firefly', object: firefly, curved: true },
       { id: 'portfolio', object: table, curved: true },
+      { id: 'portfolio', object: tableSketch },
       { id: 'contacts', object: folder },
       { id: 'pendant', object: pendant.object },
       { id: 'printer', object: printer.root },

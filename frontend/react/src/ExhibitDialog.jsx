@@ -1,3 +1,6 @@
+import { createPortal } from 'react-dom'
+import { setSurfaceImage, setSurfacePreview } from './workshop/scene.js'
+import { captureSurface } from './workshop/surface-capture.js'
 import { roomIndexControl } from './workshop/exhibit-navigation.js'
 import * as Dialog from '@radix-ui/react-dialog'
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUpRight, Box, Expand, Images, Mail, X } from 'lucide-react'
@@ -75,7 +78,8 @@ function PrototypeStudies({ gallery, photoIndex, mode, onSelect }) {
   )
 }
 
-export default function ExhibitDialog({ exhibitId, entry, photos = [], research, researchSection, parentTitle, backLabel, returningFrom, shelf, sceneExhibits, zoom, onExit, onBack, onNavigate, onZoom }) {
+export default function ExhibitDialog({ exhibitId, entry, surfaceHost, preview = false, photos = [], research, researchSection, parentTitle, backLabel, returningFrom, shelf, sceneExhibits, zoom, onExit, onBack, onNavigate, onZoom }) {
+  const [surfaceContent, setSurfaceContent] = useState(null)
   const [mode, setMode] = useState(zoom || (photos.length && !shelf) ? 'photo' : 'model')
   const [photoIndex, setPhotoIndex] = useState(0)
   const previousResearch = useRef(null)
@@ -115,6 +119,12 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
   useEffect(() => {
     if (zoom) setMode('photo')
   }, [zoom])
+
+  useEffect(() => {
+    if (!surfaceContent || mode !== 'photo') return
+    if (preview) return captureSurface(surfaceContent, canvas => setSurfacePreview('portfolio', canvas), { preview: true })
+    if (sceneExhibits) return captureSurface(surfaceContent, canvas => setSurfaceImage('portfolio', canvas))
+  }, [surfaceContent, sceneExhibits, mode, preview])
 
   useEffect(() => {
     sceneExhibitsRef.current = sceneExhibits
@@ -181,34 +191,44 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
 
   const orderSubject = isTable ? `стол Hyperline ${activeTable.name}` : entry.order
 
-  return (
-    <Dialog.Root open onOpenChange={(open) => { if (!open) onBack() }}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="exhibit-overlay" onClick={onBack} />
-        <Dialog.Content
-          className="exhibit-dialog workshop-paper"
+  const Content = preview ? 'div' : Dialog.Content
+  const Heading = preview ? 'h2' : Dialog.Title
+  const Intro = preview ? 'p' : Dialog.Description
+  const PhotoTrigger = preview ? 'button' : Dialog.Trigger
+
+  const panel = (
+        <Content
+          ref={surfaceHost ? setSurfaceContent : undefined}
+          className={`exhibit-dialog workshop-paper${surfaceHost ? ' surface-interface hyperline-poster' : ''}`}
+          data-scene={surfaceHost && !preview ? sceneExhibits ? 'ready' : sceneExhibits === null ? 'unavailable' : 'loading' : undefined}
+          data-preview={preview || undefined}
+          inert={preview ? '' : undefined}
+          aria-hidden={preview || undefined}
+          data-mode={surfaceHost ? mode : undefined}
           data-entry={exhibitId}
-          onPointerDownOutside={event => event.preventDefault()}
           {...(!entry.intro || researchPage ? { 'aria-describedby': undefined } : {})}
-          onOpenAutoFocus={(event) => {
-            opener.current = document.activeElement
-            const target = Array.from(layoutRef.current?.querySelectorAll('a') || []).find((link) => link.hash === returningFrom)
-            event.preventDefault()
-            if (!target) {
-              event.target.focus({ preventScroll: true })
-              return
-            }
-            target.focus({ preventScroll: true })
-            target.scrollIntoView({ block: 'nearest' })
-          }}
-          onCloseAutoFocus={(event) => {
-            event.preventDefault()
-            if (location.hash) return
-            const target = opener.current instanceof HTMLElement && opener.current !== document.body && opener.current.getClientRects().length
-              ? opener.current
-              : roomIndexControl(exhibitId)
-            target?.focus({ preventScroll: true })
-          }}
+          {...(!preview && {
+            onPointerDownOutside: surfaceHost ? undefined : event => event.preventDefault(),
+            onOpenAutoFocus(event) {
+              opener.current = document.activeElement
+              const target = Array.from(layoutRef.current?.querySelectorAll('a') || []).find((link) => link.hash === returningFrom)
+              event.preventDefault()
+              if (!target) {
+                event.target.focus({ preventScroll: true })
+                return
+              }
+              target.focus({ preventScroll: true })
+              target.scrollIntoView({ block: 'nearest' })
+            },
+            onCloseAutoFocus(event) {
+              event.preventDefault()
+              if (location.hash) return
+              const target = opener.current instanceof HTMLElement && opener.current !== document.body && opener.current.getClientRects().length
+                ? opener.current
+                : roomIndexControl(exhibitId)
+              target?.focus({ preventScroll: true })
+            },
+          })}
         >
           <button type="button" className="exhibit-exit" onClick={onExit} aria-label="Вернуться в мастерскую">
             <X size={23} aria-hidden="true" />
@@ -242,7 +262,7 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
                 >
                   <div className="exhibit-print" data-print-position={photoIndex % 4}>
                     <Dialog.Root open={zoom} onOpenChange={(open) => open ? onZoom() : onBack()}>
-                      <Dialog.Trigger className="exhibit-photo" aria-label="Увеличить снимок">
+                      <PhotoTrigger className="exhibit-photo" aria-label="Увеличить снимок">
                         <img src={`/${activePhoto.src}`} alt={activePhoto.alt || entry.title} onLoad={({ currentTarget }) => {
                           if (currentTarget.naturalHeight) {
                             const ratio = currentTarget.naturalWidth / currentTarget.naturalHeight
@@ -250,8 +270,8 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
                           }
                         }} />
                         <span className="exhibit-expand"><Expand size={16} aria-hidden="true" /></span>
-                      </Dialog.Trigger>
-                      <PhotoLightbox photo={activePhoto} index={photoIndex} count={gallery.length} move={movePhoto} onKeyDown={handlePhotoKeys} onClose={onBack} fallbackAlt={entry.title} />
+                      </PhotoTrigger>
+                      {!preview && <PhotoLightbox photo={activePhoto} index={photoIndex} count={gallery.length} move={movePhoto} onKeyDown={handlePhotoKeys} onClose={onBack} fallbackAlt={entry.title} />}
                     </Dialog.Root>
                     {activePhoto.caption && !isPrototypes && <p>{activePhoto.caption}</p>}
                   </div>
@@ -268,7 +288,7 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
                 <div className="exhibit-media-footer">
                   {mode === 'photo' ? (
                     <>
-                      <span className="photo-position" aria-live="polite">{exhibitId === 'engineering' ? 'Иллюстрация' : 'Снимок'} {photoIndex + 1} из {gallery.length}</span>
+                      {!isTable && <span className="photo-position" aria-live="polite">{exhibitId === 'engineering' ? 'Иллюстрация' : 'Снимок'} {photoIndex + 1} из {gallery.length}</span>}
                       {isPrototypes && (
                         <div className="prototype-mobile-picker" role="group" aria-label="Выбрать опыт">
                           {gallery.map((photo, index) => (
@@ -277,7 +297,18 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
                           ))}
                         </div>
                       )}
-                      {!isPrototypes && gallery.length > 1 && (
+                      {isTable && gallery.length > 1 && (
+                        <div className="table-photo-arrows" role="group" aria-label="Листать фотографии">
+                          <button type="button" onClick={() => movePhoto(-1)} aria-label="Предыдущий снимок">
+                            <ArrowLeft size={17} aria-hidden="true" />
+                          </button>
+                          <span aria-live="polite">{photoIndex + 1} / {gallery.length}</span>
+                          <button type="button" onClick={() => movePhoto(1)} aria-label="Следующий снимок">
+                            <ArrowRight size={17} aria-hidden="true" />
+                          </button>
+                        </div>
+                      )}
+                      {!isTable && !isPrototypes && gallery.length > 1 && (
                         <div className="photo-thumbs" role="group" aria-label={exhibitId === 'engineering' ? 'Иллюстрации' : 'Фотографии'}>
                           {gallery.map((photo, index) => (
                             <button type="button" key={photo.src} aria-label={photo.caption || photo.alt} aria-pressed={index === photoIndex} onClick={() => selectPhoto(index)}>
@@ -303,7 +334,7 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
 
             <article key={exhibitId} className="exhibit-copy" tabIndex={0} aria-label="Описание">
               <p className="exhibit-category">{entry.category}</p>
-              <Dialog.Title className="exhibit-heading">{entry.title}</Dialog.Title>
+              <Heading className="exhibit-heading">{entry.title}</Heading>
               <div className="exhibit-description">
                 {(researchPage || parentTitle) && (
                   <div className="exhibit-return">
@@ -313,7 +344,7 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
                   </div>
                 )}
                 {entry.intro && !researchPage && (
-                  <Dialog.Description className="exhibit-intro">{entry.intro}</Dialog.Description>
+                  <Intro className="exhibit-intro">{entry.intro}</Intro>
                 )}
 
                 {isTable && (
@@ -323,7 +354,7 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
                       <div className="variant-options">
                         {tables.map((table, index) => (
                           <label className="variant-option" key={table.name}>
-                            <input type="radio" name="exhibit-table-variant" checked={tableIndex === index} onChange={() => {
+                            <input type="radio" name={preview ? 'preview-table-variant' : 'exhibit-table-variant'} checked={tableIndex === index} onChange={() => {
                               setTableIndex(index)
                               setPhotoIndex(table.photo)
                               switchMode('photo')
@@ -430,7 +461,16 @@ export default function ExhibitDialog({ exhibitId, entry, photos = [], research,
               </div>
             </article>
           </div>
-        </Dialog.Content>
+        </Content>
+  )
+
+  if (preview) return createPortal(panel, surfaceHost)
+
+  return (
+    <Dialog.Root open onOpenChange={open => { if (!open) onBack() }}>
+      <Dialog.Portal container={surfaceHost}>
+        <Dialog.Overlay className={surfaceHost ? 'research-monitor-scrim' : 'exhibit-overlay'} onClick={surfaceHost ? undefined : onBack} />
+        {panel}
       </Dialog.Portal>
     </Dialog.Root>
   )

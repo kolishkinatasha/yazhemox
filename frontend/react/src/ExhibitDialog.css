@@ -630,3 +630,58 @@
     color: #fff5e2;
   }
 }
+
+#hyperline-poster-display .hyperline-poster {
+  inset: auto;
+  left: var(--monitor-x, 8vw);
+  top: var(--monitor-y, 10vh);
+  width: var(--monitor-width, 84vw);
+  height: var(--monitor-height, 80vh);
+  max-width: none;
+  grid-template-rows: minmax(0, 1fr);
+  border-radius: 0;
+  box-shadow: none;
+  animation: none;
+  clip-path: none;
+  border: 1px solid #d4cbb7;
+  background: #f4eedf url('/media/ui/paper-fibre.png') repeat;
+}
+
+#hyperline-poster-display .hyperline-poster:is([data-scene="loading"], [data-scene="ready"][data-mode="photo"]:not([data-capture-error])),
+#hyperline-poster-display .hyperline-poster[data-preview],
+#hyperline-poster-display[data-approaching] .hyperline-poster {
+  opacity: 0;
+}
+
+.exhibit-dialog.hyperline-poster .exhibit-copy {
+  padding: 34px 25px 20px 0;
+  font-size: clamp(12px, 1.75vh, 15px);
+}
+.exhibit-dialog.hyperline-poster .exhibit-heading { font-size: clamp(28px, 4.8vh, 46px); margin-bottom: 12px }
+.hyperline-poster .exhibit-section { margin-top: 13px }
+.exhibit-dialog.hyperline-poster .exhibit-exit {
+  inset: 34px 25px auto auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #634332;
+  color: #fff6e4;
+}
+.exhibit-dialog[data-entry="portfolio"] .exhibit-print { box-shadow: none }
+.hyperline-poster .exhibit-photo img { object-fit: contain }
+.hyperline-poster [data-monitor-focus] { outline: 2px solid #a25535 }
+
+.exhibit-media-footer:has(.table-photo-arrows) { justify-content: center; padding: 5px 12px 14px }
+.exhibit-media-footer .table-photo-arrows { align-items: center; gap: 9px }
+.table-photo-arrows span {
+  min-width: 52px;
+  text-align: center;
+  color: #655140;
+  font: 600 12px/1.2 var(--catalog-mono);
+  font-variant-numeric: tabular-nums;
+}
+.exhibit-dialog .table-photo-arrows button {
+  border: 1px solid #91765971;
+  border-radius: 50%;
+  background: #f4ebd9;
+}

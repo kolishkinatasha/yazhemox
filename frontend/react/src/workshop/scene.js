@@ -28,7 +28,7 @@ const pointer = new T.Vector2(), raycaster = new T.Raycaster();
 const cameraTarget = new T.Vector3();
 const overviewTarget = new T.Vector3(.25, 2.77, -.46);
 const overviewCamera = new T.PerspectiveCamera(38, 1, .1, 80);
-overviewCamera.position.set(-5.72, 6.42, 10.48);
+overviewCamera.position.set(-6.21, 6.73, 11.55);
 overviewCamera.lookAt(overviewTarget);
 overviewCamera.updateMatrixWorld();
 const brand = $('.brand');
@@ -37,6 +37,7 @@ const workshopPage = $('#workshop');
 const authorMode = new URLSearchParams(location.search).has('edit');
 workshopPage.classList.toggle('author-mode', authorMode);
 const exhibitSurfaces = {
+  portfolio: { host: $('#hyperline-poster-display'), name: 'hyperline-poster-sheet', fitX: .92, fitY: .93 },
   generator: { host: $('#shelf-generator-display'), name: 'shelf-generator-sheet', fitX: .88, fitY: .83 },
   about: { host: $('#author-board-display'), name: 'author-cork', fitX: .82, fitY: .81 },
   engineering: { host: $('#research-screen'), name: 'research-display', fitX: .88, fitY: .80 },
@@ -60,7 +61,7 @@ const letteringEditor = createLetteringEditor(workshopPage, letteringLayer, lett
 const printerToggle = $('#printer-toggle');
 let roomZone = null, cameraMove = null, layoutEditor;
 let overlayDirty = true;
-let overviewObjects, poster;
+let overviewObjects;
 let paintedSeason;
 let cameraSettings, cameraEffects, courtyardMaterial;
 function syncExhibit() {
@@ -118,7 +119,7 @@ function createRoom(backdrop, mark) {
     surface.pins = surface.mesh.getObjectByName('author-pin-hardware');
   }
   exhibitNavigation.setSceneExhibits(workshop.exhibits);
-  ({ printer, pendant, cat, coffee, window: cityWindow, overviewObjects, poster } = workshop);
+  ({ printer, pendant, cat, coffee, window: cityWindow, overviewObjects } = workshop);
   courtyardMaterial = scene.getObjectByName('courtyard').material;
   if (!software) cameraEffects = createCameraEffects(renderer, scene);
   const ambient = new T.HemisphereLight('#ddd9e4', '#9e8474', .68);
@@ -244,7 +245,7 @@ function fitOverview(width, height) {
 
   const margin = width <= 620 ? 14 : 26;
   const top = Math.max($('header').offsetTop + $('.top-actions').offsetHeight + 14, brand.offsetHeight + margin + 12);
-  const bottom = $('footer').offsetTop - 14;
+  const bottom = $('footer').offsetTop - (width <= 620 ? 14 : 32);
   const size = bounds.getSize(new T.Vector2());
   const center = bounds.getCenter(new T.Vector2());
   const scale = bounds.isEmpty() ? height / 2
@@ -254,7 +255,7 @@ function fitOverview(width, height) {
     fov: overviewCamera.fov,
     position: overviewCamera.position,
     target: overviewTarget,
-    zoom: 2 * scale / height,
+    zoom: 2 * scale / height * (width <= 620 ? 1 : .89),
     offsetX: center.x * scale,
     offsetY: center.y * scale + (height - top - bottom) / 2,
   };
@@ -592,21 +593,10 @@ function updateSceneOverlay() {
   if (!overlayDirty || cameraMove) return;
   camera.updateMatrixWorld();
   const id = activeRoomZone();
-  if (!id) positionBrand();
   halos.update(camera, innerWidth, innerHeight, id);
   lettering.update(camera, innerWidth, innerHeight, id);
   letteringEditor.update(id, narrowRoom.matches);
   overlayDirty = false;
-}
-
-function positionBrand() {
-  const [left, right] = poster.topEdge.map(point => poster.object.localToWorld(point.clone()).project(camera));
-  const posterTop = (.5 - Math.max(left.y, right.y) * .5) * innerHeight;
-  const halfWidth = brand.offsetWidth / 2;
-  const x = T.MathUtils.clamp(((left.x + right.x) * .25 + .5) * innerWidth, halfWidth + 12, innerWidth - halfWidth - 12);
-  const y = posterTop - 22;
-  brand.style.setProperty('--brand-x', `${x}px`);
-  brand.style.setProperty('--brand-y', `${Math.max(brand.offsetHeight + 9, y)}px`);
 }
 
 function intersect(event) {

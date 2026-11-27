@@ -38,6 +38,7 @@ export default function App() {
     <ExhibitDialog
       key={exhibit.id}
       exhibitId={exhibit.id}
+      surfaceHost={useMonitor && exhibit.id === 'portfolio' ? document.getElementById('hyperline-poster-display') : undefined}
       entry={exhibit.entry}
       photos={exhibit.photos}
       research={exhibit.research}
