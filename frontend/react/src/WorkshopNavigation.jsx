@@ -1,101 +1,192 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import {
-  BookOpen, Box, ChevronRight, FlaskConical, Gem, Lamp, Layers,
-  Mail, Menu, Printer, Ruler, Table, UserRound,
-} from 'lucide-react'
+import { Mail, Menu, X } from 'lucide-react'
 import { catalogue } from './workshop/workshop-catalog.js'
 import { exhibitNavigation } from './workshop/exhibit-navigation.js'
+import { hintRoomObject } from './workshop/scene.js'
+import './WorkshopNavigation.css'
 
+// Entries reuse the room lettering, so every name can be found next to its object.
 const groups = [
-  { title: 'Предметы', icon: Box, items: [['portfolio', Table], ['firefly', Lamp], ['pendant', Gem], ['generator', Layers]] },
-  { title: 'Печать и макеты', icon: Printer, items: [['printer', Box], ['prototypes', Ruler]] },
-  { title: 'Исследования и автор', icon: FlaskConical, items: [['engineering', BookOpen], ['about', UserRound]] },
+  { title: 'На заказ', items: [
+    ['portfolio', 'столы из фанеры и паракорда'],
+    ['firefly', 'светильник с оптоволокном'],
+    ['pendant', '«Шухов», титан'],
+  ] },
+  { title: 'Своими руками', items: [
+    ['generator', 'генератор этажерок'],
+    ['printer', 'модели и файлы'],
+    ['prototypes', 'пробы и наработки'],
+  ] },
+  { title: 'Об Иване', items: [
+    ['engineering', 'диссертация и статьи'],
+    ['about', 'кто делает эти вещи'],
+  ] },
 ]
 
-function CatalogGroup({ title, icon: GroupIcon, items, onSelect }) {
-  return (
-    <section className="catalog-group">
-      <h2><GroupIcon aria-hidden="true" />{title}</h2>
+// Keep in sync with the media query that collapses the strip in WorkshopNavigation.css.
+const compactLayout = '(max-width: 999px)'
+
+function hintOnPointer(id) {
+  return event => {
+    if (event.pointerType !== 'touch') hintRoomObject(id)
+  }
+}
+
+function clearHint() {
+  hintRoomObject(null)
+}
+
+// Keyboard focus shows the object too; a mouse click already did that on hover.
+function hintOnFocus(id) {
+  return event => {
+    if (event.currentTarget.matches(':focus-visible')) hintRoomObject(id)
+  }
+}
+
+function IndexGroups({ idPrefix, detailed, onSelect }) {
+  return groups.map(({ title, items }, index) => (
+    <section key={title} className="room-index-group" aria-labelledby={`${idPrefix}-${index}`}>
+      <h2 id={`${idPrefix}-${index}`}>{title}</h2>
       <ul>
-        {items.map(([id, ItemIcon]) => (
+        {items.map(([id, note]) => (
           <li key={id}>
-            <button type="button" onClick={() => onSelect(id)}>
-              <ItemIcon aria-hidden="true" />
-              <span>{catalogue[id].title}</span>
-              <ChevronRight className="catalog-chevron" aria-hidden="true" />
+            <button
+              type="button"
+              className="room-index-link"
+              onPointerEnter={detailed ? undefined : hintOnPointer(id)}
+              onPointerLeave={detailed ? undefined : clearHint}
+              onFocus={detailed ? undefined : hintOnFocus(id)}
+              onBlur={detailed ? undefined : clearHint}
+              onClick={() => onSelect(id)}
+            >
+              <span>{catalogue[id].label}</span>
+              {detailed && <small>{note}</small>}
             </button>
           </li>
         ))}
       </ul>
     </section>
+  ))
+}
+
+function ContactButton({ onSelect, hint = false }) {
+  return (
+    <button
+      type="button"
+      className="room-index-contact"
+      onPointerEnter={hint ? hintOnPointer('contacts') : undefined}
+      onPointerLeave={hint ? clearHint : undefined}
+      onFocus={hint ? hintOnFocus('contacts') : undefined}
+      onBlur={hint ? clearHint : undefined}
+      onClick={() => onSelect('contacts')}
+    >
+      <Mail aria-hidden="true" />Связаться
+    </button>
   )
 }
 
 export default function WorkshopNavigation() {
   const [open, setOpen] = useState(false)
-  const navigation = useRef(null)
-  const browse = useRef(null)
-  const catalog = useRef(null)
-  const focusFirstItem = useRef(false)
+  const toggle = useRef(null)
+  const sheet = useRef(null)
 
   useLayoutEffect(() => {
-    if (open && focusFirstItem.current) catalog.current.querySelector('button').focus()
-    focusFirstItem.current = false
+    if (open) sheet.current.querySelector('button.room-index-link')?.focus()
   }, [open])
 
   useEffect(() => {
     if (!open) return
+    const compact = matchMedia(compactLayout)
 
-    function handleOutsideClick(event) {
-      if (!navigation.current.contains(event.target)) setOpen(false)
+    function handleKeys(event) {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        event.stopImmediatePropagation()
+        setOpen(false)
+        toggle.current.focus()
+        return
+      }
+      if (event.key !== 'Tab') return
+      const controls = sheet.current.querySelectorAll('button')
+      const first = controls[0]
+      const last = controls[controls.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
     }
 
-    function handleEscape(event) {
-      if (event.key !== 'Escape') return
-      event.preventDefault()
-      event.stopImmediatePropagation()
-      setOpen(false)
-      browse.current.focus()
+    function closeOnWideScreen() {
+      if (!compact.matches) setOpen(false)
     }
 
-    document.addEventListener('click', handleOutsideClick)
-    document.addEventListener('keydown', handleEscape, true)
+    document.addEventListener('keydown', handleKeys, true)
+    compact.addEventListener('change', closeOnWideScreen)
     return () => {
-      document.removeEventListener('click', handleOutsideClick)
-      document.removeEventListener('keydown', handleEscape, true)
+      document.removeEventListener('keydown', handleKeys, true)
+      compact.removeEventListener('change', closeOnWideScreen)
     }
   }, [open])
 
   function openExhibit(id) {
-    setOpen(false)
-    if (id !== 'contacts') browse.current.focus()
+    clearHint()
     exhibitNavigation.open(id)
   }
 
+  function openFromSheet(id) {
+    setOpen(false)
+    // The exhibit dialog returns focus to the element focused before it opened.
+    if (id !== 'contacts') toggle.current.focus()
+    openExhibit(id)
+  }
+
+  function closeSheet() {
+    setOpen(false)
+    toggle.current.focus()
+  }
+
   return (
-    <nav ref={navigation} className="workshop-navigation" aria-label="Разделы мастерской">
-      <div className="dock">
-        <button
-          ref={browse}
-          type="button"
-          id="browse"
-          aria-expanded={open}
-          aria-controls="catalog-menu"
-          onClick={event => {
-            focusFirstItem.current = !open && event.detail === 0
-            setOpen(!open)
-          }}
-        >
-          <Menu aria-hidden="true" />Каталог
-        </button>
-        <button type="button" id="workshop-contacts" onClick={() => openExhibit('contacts')}>
-          <Mail aria-hidden="true" />Контакты
-        </button>
+    <nav className="room-index" aria-label="Разделы мастерской">
+      <span className="room-index-shade" aria-hidden="true" />
+
+      <div className="room-index-strip">
+        <IndexGroups idPrefix="room-index-strip" onSelect={openExhibit} />
+        <ContactButton onSelect={openExhibit} hint />
       </div>
-      <div className="catalog-sheet" hidden={!open}>
-        <div ref={catalog} id="catalog-menu" role="group" aria-label="Каталог мастерской">
-          {groups.map(group => <CatalogGroup key={group.title} {...group} onSelect={openExhibit} />)}
+
+      <div className="room-index-compact">
+        <button
+          ref={toggle}
+          type="button"
+          className="room-index-toggle"
+          aria-expanded={open}
+          aria-controls="room-index-sheet"
+          onClick={() => setOpen(true)}
+        >
+          <Menu aria-hidden="true" /><span>Разделы</span>
+        </button>
+        <ContactButton onSelect={openExhibit} />
+      </div>
+
+      <div
+        ref={sheet}
+        id="room-index-sheet"
+        className="room-index-sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Разделы мастерской"
+        hidden={!open}
+      >
+        <button type="button" className="room-index-close" aria-label="Закрыть разделы" onClick={closeSheet}>
+          <X aria-hidden="true" />
+        </button>
+        <div className="room-index-sheet-groups">
+          <IndexGroups idPrefix="room-index-sheet" detailed onSelect={openFromSheet} />
         </div>
+        <ContactButton onSelect={openFromSheet} />
       </div>
     </nav>
   )

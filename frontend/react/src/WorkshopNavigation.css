@@ -1,0 +1,261 @@
+/* The room index is set like the lettering painted next to the objects. */
+.room-index {
+  --index-ink: #f7efdc;
+  --index-lit: #fff2ce;
+  --index-muted: #d9caa6;
+  --index-shadow: 0 1px 2px #201912, 0 0 6px #201912;
+  --index-rule: #fff3d63d;
+  --index-oxide: #783f30;
+  --index-oxide-hover: #633125;
+  --index-mono: "PT Mono", "IBM Plex Mono", Consolas, "Courier New", monospace;
+  position: relative;
+}
+
+#workshop .workshop-footer { flex: 1; min-width: 0 }
+
+/* Darkens the floor just enough for the light lettering. */
+.room-index-shade {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: -1;
+  height: clamp(140px, 24vh, 220px);
+  background: linear-gradient(to top, #120f0bd1, #120f0b80 48%, #120f0b00);
+  pointer-events: none;
+}
+
+.room-index-strip {
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(14px, 1.8vw, 28px);
+}
+
+.room-index-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.room-index-group + .room-index-group {
+  padding-left: clamp(14px, 1.8vw, 28px);
+  border-left: 1px solid var(--index-rule);
+}
+
+.room-index h2 {
+  margin: 0 0 2px;
+  color: var(--index-muted);
+  font: 700 10px/1.2 var(--index-mono);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  text-shadow: var(--index-shadow);
+}
+
+.room-index ul {
+  display: flex;
+  gap: clamp(2px, .7vw, 10px);
+  margin: 0 0 0 -10px;
+  padding: 0;
+  list-style: none;
+}
+
+.room-index-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 10px;
+  color: var(--index-ink);
+  font: 600 13px/1 Inter, Arial, sans-serif;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  text-shadow: var(--index-shadow);
+  white-space: nowrap;
+}
+
+.room-index-link span {
+  padding: 4px 0 5px;
+  border-bottom: 1px solid transparent;
+  transition: color .15s ease, border-color .15s ease;
+}
+
+.room-index-link:is(:hover, :focus-visible) span {
+  color: var(--index-lit);
+  border-bottom-color: currentColor;
+}
+
+#workshop .room-index :is(.room-index-link, .room-index-toggle, .room-index-close):focus-visible {
+  outline: 2px solid #f6dfad;
+  outline-offset: -3px;
+  border-radius: 2px;
+}
+
+.room-index-contact {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-left: auto;
+  padding: 0 18px;
+  background: var(--index-oxide);
+  color: #fff5e2;
+  box-shadow: 0 4px 14px #120f0b66;
+  font: 650 14px/1 Inter, Arial, sans-serif;
+  transition: background .15s ease;
+}
+
+.room-index-contact:hover { background: var(--index-oxide-hover) }
+
+#workshop .room-index-contact:focus-visible {
+  outline: 2px solid #f6dfad;
+  outline-offset: 2px;
+}
+
+.room-index svg {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  stroke-width: 1.6;
+}
+
+/* The menu points at the same object and the same painted label. */
+#object-halos .object-halo.is-hinted {
+  opacity: 1;
+  filter: url(#halo-hint);
+  transition: opacity .18s;
+}
+
+#workshop .object-lettering.is-hinted {
+  color: #fff8e6;
+  text-shadow: 0 1px 2px #201912, 0 0 10px #ffd98a, 0 0 18px #ffd98a99;
+}
+
+/* Small screens open the full list from a single control. */
+.room-index-compact {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.room-index-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 6px 0 2px;
+  color: var(--index-ink);
+  font: 600 13px/1 Inter, Arial, sans-serif;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  text-shadow: var(--index-shadow);
+}
+
+.room-index-toggle svg { filter: drop-shadow(0 1px 2px #201912) }
+
+.room-index-toggle span {
+  padding: 4px 0 5px;
+  border-bottom: 1px solid #f7efdc8c;
+}
+
+.room-index-toggle:hover span { color: var(--index-lit); border-bottom-color: currentColor }
+
+.room-index-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: max(20px, env(safe-area-inset-top)) 26px max(24px, env(safe-area-inset-bottom));
+  background: #15130fe3;
+  backdrop-filter: blur(6px);
+}
+
+.room-index-sheet[hidden] { display: none }
+
+.room-index-close {
+  position: absolute;
+  top: max(14px, env(safe-area-inset-top));
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--index-ink);
+}
+
+.room-index-close svg { width: 24px; height: 24px }
+
+.room-index-sheet-groups {
+  display: grid;
+  gap: 22px;
+  margin: 52px 0 28px;
+}
+
+.room-index-sheet .room-index-group + .room-index-group {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.room-index-sheet h2 { margin-bottom: 4px }
+
+.room-index-sheet ul {
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+}
+
+.room-index-sheet .room-index-link {
+  display: grid;
+  justify-items: start;
+  gap: 3px;
+  width: 100%;
+  min-height: 52px;
+  padding: 6px 0;
+  font-size: 19px;
+  letter-spacing: .08em;
+  text-align: left;
+  white-space: normal;
+}
+
+.room-index-sheet .room-index-link span { padding: 0 }
+#workshop .room-index-sheet .room-index-link:focus-visible { outline-offset: 4px }
+
+.room-index-sheet .room-index-link small {
+  color: #cfc3a8;
+  font: 500 12.5px/1.3 Inter, Arial, sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+  text-shadow: none;
+}
+
+.room-index-sheet .room-index-contact {
+  width: min(100%, 420px);
+  margin: auto 0 0;
+}
+
+@media (max-width: 1239px) {
+  .room-index-link,
+  .room-index-toggle {
+    padding-inline: 7px;
+    font-size: 12px;
+    letter-spacing: .1em;
+  }
+
+  .room-index-strip ul { margin-left: -7px }
+  .room-index-contact { padding-inline: 14px }
+}
+
+/* Keep in sync with compactLayout in WorkshopNavigation.jsx. */
+@media (max-width: 999px) {
+  .room-index-strip { display: none }
+  .room-index-compact { display: flex }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .room-index-link span,
+  .room-index-contact { transition: none }
+}

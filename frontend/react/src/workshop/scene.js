@@ -32,6 +32,9 @@ overviewCamera.lookAt(overviewTarget);
 overviewCamera.updateMatrixWorld();
 const brand = $('.brand');
 const workshopPage = $('#workshop');
+// Author tools stay out of the visitors' way. Open the site with ?edit to arrange the room.
+const authorMode = new URLSearchParams(location.search).has('edit');
+workshopPage.classList.toggle('author-mode', authorMode);
 const exhibitSurfaces = {
   generator: { host: $('#shelf-generator-display'), name: 'shelf-generator-sheet', fitX: .88, fitY: .83 },
   about: { host: $('#author-board-display'), name: 'author-cork', fitX: .82, fitY: .81 },
@@ -135,7 +138,7 @@ function createRoom(backdrop) {
     if (object.isMesh && (!object.material.transparent || object.userData.pickOnly)) pickMeshes.push(object);
   });
   $('#zone-list').hidden = false;
-  $('#lettering-start').hidden = false;
+  $('#lettering-start').hidden = !authorMode;
   printerToggle.onclick = togglePrinting;
   updatePrintState();
   printerToggle.hidden = false;
@@ -617,6 +620,16 @@ function intersect(event) {
 function highlightAction(object) {
   if (renderer && !layoutEditor?.active) renderer.domElement.style.cursor = object ? 'pointer' : 'default';
   halos.highlight(object);
+}
+
+// The room index points at an exhibit before the visitor opens it.
+export function hintRoomObject(id) {
+  if (!renderer || layoutEditor?.active || letteringEditor.active) return;
+  const target = current ? null : id;
+  halos.highlightId(target);
+  for (const label of letteringLayer.querySelectorAll('.object-lettering')) {
+    label.classList.toggle('is-hinted', Boolean(target) && label.dataset.action === target);
+  }
 }
 
 function hover(event) {

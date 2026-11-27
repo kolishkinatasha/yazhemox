@@ -151,6 +151,13 @@
     <feFlood flood-color="#fff1bc" result="light"/>
     <feComposite in="light" in2="edge" operator="in"/>
   </filter>
+  <filter id="halo-hint" x="-60%" y="-60%" width="220%" height="220%" color-interpolation-filters="sRGB">
+    <feMorphology in="SourceAlpha" operator="dilate" radius="1.5" result="grown"/>
+    <feGaussianBlur in="grown" stdDeviation="5" result="soft"/>
+    <feComposite in="soft" in2="SourceAlpha" operator="out" result="edge"/>
+    <feFlood flood-color="#ffe7b0" result="light"/>
+    <feComposite in="light" in2="edge" operator="in"/>
+  </filter>
   <mask id="desk-halo-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="100%" height="100%" mask-type="luminance">
     <rect width="100%" height="100%" fill="white"/>
     <path id="desk-halo-printer" fill="black" stroke="black" stroke-width="3" stroke-linejoin="round"/>
@@ -160,7 +167,6 @@
 <footer>
   <div class="workshop-footer">
     <div id="workshop-navigation"></div>
-    <p class="workshop-signature">Мастерская Ивана · Москва, Россия</p>
   </div>
   <button type="button" id="room-switch" data-target="shelf" hidden><span id="room-switch-arrow" aria-hidden="true">→</span><span id="room-switch-label">К стеллажу</span></button>
 <div id="lettering-tools" role="group" aria-label="Расстановка подписей" hidden>

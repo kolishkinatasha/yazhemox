@@ -24,17 +24,6 @@
   bottom: var(--nav-bottom);
 }
 
-.workshop-navigation { position: relative }
-
-.workshop-signature {
-  margin: 8px 0 0;
-  color: var(--nav-paper);
-  font: 700 10px/1.4 var(--nav-type);
-  letter-spacing: .05em;
-  text-transform: uppercase;
-  text-shadow: 0 1px 4px #18160f, 0 1px 8px #18160f;
-}
-
 #workshop .top-actions {
   display: flex;
   width: max-content;
@@ -58,181 +47,6 @@
 #workshop .top-actions > button:is(:hover, [aria-expanded="true"]),
 #workshop .view-settings-toggle:is(:hover, [aria-expanded="true"]) { background: #e4d6ba }
 
-#workshop .dock {
-  display: flex;
-  gap: 7px;
-  width: max-content;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  backdrop-filter: none;
-}
-
-.workshop-navigation {
-  --catalog-ink: #34271d;
-  --catalog-oxide: #75392c;
-  --catalog-fibre: url('/media/ui/paper-fibre.png');
-  --catalog-label-edge: polygon(
-    1% 11%, 4% 8%, 5% 3%, 21% 4%, 33% 1%, 47% 4%, 59% 2%, 71% 6%, 86% 2%,
-    96% 5%, 100% 13%, 99% 33%, 100% 52%, 98.5% 73%, 99% 90%, 96% 96%,
-    87% 95%, 79% 99%, 67% 96%, 57% 100%, 46% 96%, 33% 98%, 24% 94%,
-    11% 98%, 3% 94%, 1% 82%, 2% 65%, 0 48%, 1% 35%, 0 22%
-  );
-  --catalog-sheet-edge: polygon(
-    0 9px, 8px 7px, 11px 2px, 6% 3px, 9% 1px, 14% 4px, 18% 2px, 24% 5px,
-    32% 2px, 38% 4px, 45% 1px, 52% 3px, 60% 1px, 68% 4px, 77% 2px, 85% 4px, 93% 2px,
-    calc(100% - 7px) 5px, 100% 10px, calc(100% - 2px) 24%, 100% 35%,
-    calc(100% - 3px) 54%, calc(100% - 1px) 65%, 100% 82%, calc(100% - 2px) calc(100% - 7px),
-    97% calc(100% - 3px), 92% calc(100% - 1px), 87% calc(100% - 4px), 79% 100%,
-    73% calc(100% - 2px), 67% calc(100% - 5px), 60% calc(100% - 1px),
-    54% calc(100% - 4px), 47% calc(100% - 2px), 40% calc(100% - 6px),
-    32% calc(100% - 4px), 26% calc(100% - 7px), 18% calc(100% - 3px), 13% calc(100% - 5px),
-    7% calc(100% - 2px), 4px calc(100% - 5px), 1px 86%, 3px 71%,
-    0 57%, 2px 46%, 1px 32%, 3px 23%
-  );
-}
-
-#workshop .dock button,
-.catalog-group h2 {
-  --label-paper: linear-gradient(103deg, #edd3ad, #f4ddba 42%, #ebcca2);
-  --label-edge: linear-gradient(112deg, #fcdfb5, #d4a573);
-  position: relative;
-  isolation: isolate;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--catalog-ink);
-  filter: drop-shadow(0 2px 2px #38211265);
-}
-
-#workshop .dock button::before,
-#workshop .dock button::after,
-.catalog-group h2::before,
-.catalog-group h2::after {
-  position: absolute;
-  z-index: -1;
-  content: "";
-  pointer-events: none;
-  clip-path: var(--catalog-label-edge);
-}
-
-#workshop .dock button::before,
-.catalog-group h2::before {
-  inset: 0;
-  background: var(--catalog-fibre), var(--label-edge);
-}
-
-#workshop .dock button::after,
-.catalog-group h2::after {
-  inset: 2px 2px 3px;
-  background: var(--catalog-fibre), var(--label-paper);
-}
-
-#workshop .dock button {
-  min-height: 44px;
-  padding: 0 17px;
-  border: 0;
-  border-radius: 2px;
-  background: transparent;
-  font: 600 13px/1 Inter, Arial, sans-serif;
-  text-transform: none;
-  transition: filter .15s ease;
-}
-
-#workshop .dock #browse,
-.catalog-group:first-child h2 {
-  --label-paper: linear-gradient(108deg, #824635, #71392c 60%, #643025);
-  color: #fff4df;
-}
-
-#workshop .dock #browse[aria-expanded="true"] {
-  --label-paper: linear-gradient(108deg, #733d30, #582b23);
-}
-
-#workshop .dock button:active { filter: drop-shadow(0 1px 1px #38211274) brightness(.98) }
-
-.catalog-sheet {
-  position: absolute;
-  isolation: isolate;
-  left: -3px;
-  bottom: calc(100% + 9px);
-  z-index: 2;
-  width: min(684px, calc(100vw - 2 * var(--nav-edge)));
-  filter: drop-shadow(0 8px 11px #21150f85);
-}
-
-.catalog-sheet::before,
-.catalog-sheet::after {
-  position: absolute;
-  z-index: -1;
-  content: "";
-  pointer-events: none;
-  clip-path: var(--catalog-sheet-edge);
-}
-
-.catalog-sheet::before {
-  inset: 0 2px -3px -2px;
-  background: var(--catalog-fibre), #d7b68d;
-  transform: rotate(-.4deg);
-}
-
-.catalog-sheet::after {
-  inset: 0;
-  background:
-    var(--catalog-fibre),
-    radial-gradient(ellipse at 2% 98%, #ae764023, transparent 36%),
-    radial-gradient(circle at calc(100% - 17px) calc(100% + 29px), transparent 58px, #a66b3a24 59px, #a66b3a2e 62px, transparent 66px),
-    linear-gradient(112deg, #ffedcf, #f5dfbc 60%, #efd4ae);
-}
-
-#workshop #catalog-menu {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: auto 1fr;
-  max-height: min(68dvh, calc(100dvh - 132px));
-  padding: 11px 13px 14px;
-  overflow: auto;
-  overscroll-behavior: contain;
-  color: var(--catalog-ink);
-}
-
-.catalog-group {
-  display: grid;
-  grid-template-rows: subgrid;
-  grid-row: span 2;
-  row-gap: 10px;
-  min-width: 0;
-}
-
-.catalog-group h2 {
-  min-height: 40px;
-  margin: 0 3px;
-  padding: 7px 11px;
-  border: 0;
-  font: 650 12.5px/1.25 Inter, Arial, sans-serif;
-}
-
-.catalog-group:first-child h2 { transform: rotate(-.75deg) }
-.catalog-group:nth-child(3) h2 { transform: rotate(.45deg) }
-
-.catalog-group ul {
-  margin: 0;
-  padding: 0 5px;
-  list-style: none;
-}
-
-.catalog-group + .catalog-group ul { border-left: 1px solid #9d714942 }
-
-.workshop-navigation svg {
-  flex: 0 0 auto;
-  width: 18px;
-  height: 18px;
-  stroke-width: 1.5;
-}
-
-.catalog-group button,
 #workshop #view-tools button {
   display: flex;
   align-items: center;
@@ -244,40 +58,6 @@
   font-size: 13px;
   font-weight: 600;
   line-height: 1.25;
-}
-
-.catalog-group button {
-  position: relative;
-  isolation: isolate;
-  font-size: 12.5px;
-  font-weight: 550;
-}
-
-.catalog-group button span { flex: 1 }
-.catalog-group button svg { color: #6c4b35 }
-.catalog-group .catalog-chevron { width: 11px; height: 11px; stroke-width: 1.9 }
-
-.catalog-group button::before {
-  position: absolute;
-  z-index: -1;
-  inset: 4px 0;
-  content: "";
-  background: #b9844b24;
-  clip-path: var(--catalog-label-edge);
-  opacity: 0;
-  transition: opacity .15s ease;
-}
-
-.catalog-group button:is(:focus-visible, :active)::before { opacity: 1 }
-
-@media (hover: hover) {
-  .catalog-group button:hover::before { opacity: 1 }
-  #workshop .dock button:hover { filter: drop-shadow(0 3px 3px #38211265) brightness(1.08) }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  #workshop .dock button,
-  .catalog-group button::before { transition: none }
 }
 
 #workshop #view-tools button { justify-content: space-between }
@@ -344,20 +124,17 @@
   background: var(--catalog-control-hover);
 }
 
-#workshop :is(.dock button, #help, .view-settings-toggle, #room-switch, #zone-back):focus-visible {
+#workshop :is(#help, .view-settings-toggle, #room-switch, #zone-back):focus-visible {
   outline: 2px solid #f3cf95;
   outline-offset: 2px;
-}
-
-#workshop #catalog-menu button:focus-visible {
-  outline: 2px solid var(--catalog-oxide);
-  outline-offset: -2px;
 }
 
 #workshop :is(#view-tools, #help-panel) button:focus-visible {
   outline: 2px solid var(--nav-red);
   outline-offset: -2px;
 }
+
+#workshop:not(.author-mode) .view-settings { display: none }
 
 #workshop.layout-editing .top-actions { display: none }
 
@@ -368,31 +145,6 @@
   color: #fff2ce;
   text-shadow: 0 1px 4px #18130d, 0 0 8px #18130d;
 }
-
-@media (max-width: 650px) {
-  #workshop #catalog-menu {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: none;
-    gap: 8px;
-    padding: 12px;
-  }
-
-  .catalog-group {
-    grid-template-rows: auto auto;
-    grid-row: auto;
-    row-gap: 2px;
-  }
-
-  .catalog-group:is(:first-child, :nth-child(3)) h2 { transform: none }
-  .catalog-group + .catalog-group ul { border-left: 0 }
-}
-
-#workshop .dock button:focus-visible {
-  outline: 2px solid var(--catalog-oxide);
-  outline-offset: -5px;
-}
-
-#workshop .dock #browse:focus-visible { outline-color: var(--nav-paper) }
 
 #workshop :is(#camera-panel, #layout-panel, #lettering-tools) {
   border-radius: 0;

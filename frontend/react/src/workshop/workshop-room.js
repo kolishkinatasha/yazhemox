@@ -3,6 +3,7 @@ import { createA1 } from './printer.js';
 import { createProduct } from './product-models.js';
 import { drawCork, leafTexture, random, texture, workshopMaterials } from './workshop-materials.js';
 import { addWorkshopCat } from './workshop-cat.js';
+import { catalogue } from './workshop-catalog.js';
 import { cityTexture } from './workshop-city.js';
 import { roundedBoxGeometry } from './workshop-geometry.js';
 
@@ -1238,18 +1239,18 @@ export function buildWorkshop(scene, backdrop) {
       { id: 'prototypes', object: smallSample },
     ],
     lettering: [
-      { id: 'about', key: 'board', object: board, title: 'Об авторе', edge: [[-1.4, .89, .046], [1.4, .89, .046]], at: .68, views: [null, 'desk', 'board'] },
-      { id: 'printer', object: printer.root, title: '3D ПЕЧАТЬ', edge: [[-.62, .54, -.35], [-.62, 1.83, -.35]], views: [null, 'desk'] },
-      { id: 'engineering', object: monitor, title: 'Исследования', edge: [[-1.33, 1.50, .24], [1.33, 1.50, .24]], at: .77, views: [null, 'desk'] },
-      { id: 'pendant', object: pendant.object, title: 'Кулон', edge: [[-.14, -.25, 0], [-.14, .26, 0]], rotation: -Math.PI / 2, views: [null, 'desk'] },
-      { id: 'contacts', key: 'projects', object: folder, title: 'Контакты', edge: [[-.42, .04, .25], [.42, .04, .25]], side: 1, views: [null, 'desk'] },
+      { id: 'about', key: 'board', object: board, title: catalogue.about.label, edge: [[-1.4, .89, .046], [1.4, .89, .046]], at: .68, views: [null, 'desk', 'board'] },
+      { id: 'printer', object: printer.root, title: catalogue.printer.label, edge: [[-.62, .54, -.35], [-.62, 1.83, -.35]], views: [null, 'desk'] },
+      { id: 'engineering', object: monitor, title: catalogue.engineering.label, edge: [[-1.33, 1.50, .24], [1.33, 1.50, .24]], at: .77, views: [null, 'desk'] },
+      { id: 'pendant', object: pendant.object, title: catalogue.pendant.label, edge: [[-.14, -.25, 0], [-.14, .26, 0]], rotation: -Math.PI / 2, views: [null, 'desk'] },
+      { id: 'contacts', key: 'projects', object: folder, title: catalogue.contacts.label, edge: [[-.42, .04, .25], [.42, .04, .25]], side: 1, views: [null, 'desk'] },
       { id: 'desk', object: desk, title: 'Рабочий стол', edge: [[-3.1, 1.77, 1.17], [3.1, 1.77, 1.17]], at: .56, side: 1, views: [null] },
-      { id: 'portfolio', key: 'hyperline', object: table, title: 'Hyperline', rim: { radius: [.415, .651], elevation: 1.252, gap: 9 }, views: [null, 'desk'] },
+      { id: 'portfolio', key: 'hyperline', object: table, title: catalogue.portfolio.label, rim: { radius: [.415, .651], elevation: 1.252, gap: 9 }, views: [null, 'desk'] },
       { id: 'cat', object: cat.object, title: 'Погладить кота', edge: [[-.3, -.14, -.44], [.3, -.14, -.44]], side: 1, rotation: 0, views: [null, 'desk'] },
       { id: 'shelf', object: shelf, title: 'Стеллаж', edge: [[-1.07, 1.9, .374], [-1.07, 3.96, .374]], at: .64, views: [null] },
-      { id: 'firefly', object: firefly, title: 'Светлячок', rim: { radius: [.404, .404], elevation: .787, gap: 10 }, views: [null, 'shelf'] },
-      { id: 'prototypes', object: largeSample, title: 'Макеты', edge: [[-.22, 0, .18], [.40, 0, .18]], side: 1, views: [null, 'shelf'] },
-      { id: 'generator', object: drawing, title: 'Раскрой', edge: [[-.43, 0, .14], [.43, 0, .14]], side: 1, views: [null, 'shelf'] },
+      { id: 'firefly', object: firefly, title: catalogue.firefly.label, rim: { radius: [.404, .404], elevation: .787, gap: 10 }, views: [null, 'shelf'] },
+      { id: 'prototypes', object: largeSample, title: catalogue.prototypes.label, edge: [[-.22, 0, .18], [.40, 0, .18]], side: 1, views: [null, 'shelf'] },
+      { id: 'generator', object: drawing, title: catalogue.generator.label, edge: [[-.43, 0, .14], [.43, 0, .14]], side: 1, views: [null, 'shelf'] },
     ],
   };
 }

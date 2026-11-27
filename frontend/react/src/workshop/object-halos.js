@@ -82,7 +82,8 @@ export function createObjectHalos(layer) {
   const byObject = new WeakMap();
   const point = new T.Vector3();
   const printerMask = layer.querySelector('#desk-halo-printer');
-  let hovered;
+  let hovered = [];
+  let hinted = [];
 
   function add(id, object, { frame, curved } = {}) {
     const path = document.createElementNS(layer.namespaceURI, 'path');
@@ -93,15 +94,26 @@ export function createObjectHalos(layer) {
     halos.push({ id, path, pieces: piecesFor(object, { frame, curved }) });
   }
 
+  function setHovered(paths) {
+    if (paths.length === hovered.length && paths.every((path, index) => path === hovered[index])) return;
+    for (const path of hovered) path.classList.remove('is-hovered');
+    for (const path of paths) path.classList.add('is-hovered');
+    hovered = paths;
+  }
+
   function highlight(object) {
     let path;
     for (let parent = object; parent && !path; parent = parent.parent) {
       path = byObject.get(parent);
     }
-    if (path === hovered) return;
-    hovered?.classList.remove('is-hovered');
-    path?.classList.add('is-hovered');
-    hovered = path;
+    setHovered(path ? [path] : []);
+  }
+
+  // The room index uses a brighter outline, and one exhibit can own several objects.
+  function highlightId(id) {
+    for (const path of hinted) path.classList.remove('is-hinted');
+    hinted = id ? halos.filter(halo => halo.id === id).map(halo => halo.path) : [];
+    for (const path of hinted) path.classList.add('is-hinted');
   }
 
   function update(camera, width, height, roomZone) {
@@ -129,5 +141,5 @@ export function createObjectHalos(layer) {
     }
   }
 
-  return { add, highlight, update };
+  return { add, highlight, highlightId, update };
 }
