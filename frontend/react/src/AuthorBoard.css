@@ -1,0 +1,230 @@
+.author-board-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+}
+
+#author-board-display:has(.author-board:is([data-scene="unavailable"], [data-capture-error]):not(.author-board-preview)) .author-board-scrim {
+  background: #26190e50;
+}
+
+.author-board {
+  --board-ink: #2d231b;
+  --board-accent: #743c30;
+  position: fixed;
+  z-index: 21;
+  left: var(--monitor-x, 9vw);
+  top: var(--monitor-y, 9vh);
+  width: var(--monitor-width, 82vw);
+  height: var(--monitor-height, 82vh);
+  overflow: hidden;
+  background: #ae8054 center / cover;
+  color: var(--board-ink);
+  font: clamp(12px, 1.8vh, 16px)/1.42 Inter, Arial, sans-serif;
+}
+
+.author-board-preview,
+.author-board[data-scene="loading"],
+.author-board[data-scene="ready"]:not([data-capture-error]) { opacity: 0 }
+.author-board-preview { pointer-events: none }
+
+.author-board-pins {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 27fr) minmax(0, 38fr) minmax(0, 35fr);
+  grid-template-rows: minmax(0, 55fr) minmax(0, 45fr);
+  gap: clamp(9px, 2vh, 20px);
+  width: 100%;
+  height: 100%;
+  padding: clamp(15px, 4vh, 34px) clamp(16px, 3vw, 38px) clamp(16px, 4vh, 34px);
+}
+
+.author-pin {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: clamp(12px, 2.5vh, 26px) clamp(10px, 1.8vw, 23px) clamp(7px, 1.6vh, 17px);
+  border: 1px solid #76532e52;
+  background: #f7ead5 url('/media/ui/paper-fibre.png');
+  border-right-color: #76532e85;
+  border-bottom-color: #76532e85;
+}
+
+.author-pin-marker {
+  position: absolute;
+  top: 6px;
+  left: calc(50% - 4px);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.author-board:is([data-scene="unavailable"], [data-capture-error]) .author-pin-marker {
+  opacity: 1;
+  background: #83382b;
+}
+
+.author-pin h2,
+.author-pin h3 { margin: 0 0 5px; color: var(--board-accent) }
+.author-pin h2 { font: 750 clamp(20px, 3.5vh, 32px)/1.08 Inter, Arial, sans-serif; letter-spacing: -.035em }
+.author-pin h2:focus { outline: none }
+.author-pin h3 { font: 700 clamp(12px, 2.1vh, 19px)/1.15 Inter, Arial, sans-serif }
+.author-pin p { margin: 0; min-height: 0; overflow: auto; overscroll-behavior: contain }
+.author-pin:is(.author-intro, .author-name-note, .author-work-note) { display: flex; flex-direction: column }
+
+.author-board-left {
+  grid-area: 1 / 1 / 3 / 2;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) clamp(62px, 14.5vh, 118px);
+  gap: clamp(8px, 1.8vh, 16px);
+  min-height: 0;
+}
+
+.author-portrait { transform: rotate(-3deg); }
+.author-intro {
+  grid-area: 1 / 2;
+  align-self: start;
+  min-height: 79%;
+  transform: rotate(.9deg);
+  background-color: #fbefdb;
+}
+
+.author-name-note {
+  grid-area: 2 / 2;
+  align-self: start;
+  justify-self: end;
+  width: 94%;
+  min-height: 88%;
+  transform: rotate(-2deg);
+  background-color: #efd7ad;
+}
+
+.author-work-picture {
+  grid-area: 1 / 3;
+  justify-self: end;
+  width: 94%;
+  transform: rotate(2.4deg);
+}
+
+.author-work-note {
+  grid-area: 2 / 3;
+  transform: rotate(.9deg);
+  background-color: #ece5d1;
+}
+
+.author-logo-note {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  place-items: center;
+  gap: 3px;
+  justify-self: center;
+  width: 58%;
+  padding: 13px 7px 5px;
+  transform: rotate(4deg);
+  background-color: #f9f1df;
+  color: var(--board-accent);
+  text-decoration: none;
+}
+
+.author-logo-note img {
+  display: block;
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  min-height: 0;
+}
+
+.author-photo {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  padding: clamp(13px, 2vh, 21px) clamp(7px, 1.3vw, 15px) clamp(19px, 4.1vh, 43px);
+  background-color: #fff9ea;
+}
+
+.author-photo button { position: relative; overflow: hidden; padding: 0; background: #594a3b2b; cursor: zoom-in }
+.author-photo img { position: absolute; display: block }
+.author-portrait img { height: 100%; width: auto; left: 50%; top: 0; transform: translateX(-50%) }
+.author-work-picture img { width: 100%; height: auto; left: 0; top: 50%; transform: translateY(-50%) }
+
+.author-photo-stage img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  margin: auto;
+}
+
+.author-note-link,
+.author-logo-note span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--board-accent);
+  font-weight: 650;
+}
+
+.author-logo-note span { font-size: clamp(10px, 1.55vh, 13px); line-height: 1.2 }
+
+.author-note-link {
+  align-self: start;
+  min-height: 40px;
+  margin-top: auto;
+  text-decoration-line: underline;
+  text-underline-offset: .18em;
+}
+
+.author-board svg { flex: none }
+.author-board-close {
+  position: absolute;
+  z-index: 2;
+  top: 3px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #583728;
+  color: #fff4df;
+}
+
+.author-board [data-board-hover] { box-shadow: inset 0 0 0 2px #8f5437 }
+.author-board :is(a, button):focus-visible,
+.author-board [data-monitor-focus] {
+  outline: 2px solid #783b29;
+  outline-offset: -2px;
+  box-shadow: inset 0 0 0 2px #783b29;
+}
+
+.author-photo-view {
+  position: absolute;
+  z-index: 3;
+  inset: 5% 12%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 10px 14px 5px;
+  border: 1px solid #76532e85;
+  background: #fbefd9;
+  border-bottom-width: 3px;
+}
+
+.author-photo-title { margin: 4px 46px 0; font-size: clamp(14px, 2.9vh, 25px); text-align: center }
+.author-photo-stage { position: relative; background: #584b3a16 }
+.author-photo-actions { display: flex; align-items: center; justify-content: center; gap: 10px }
+.author-photo-actions button { width: 44px; height: 44px; display: grid; place-items: center }
+
+@media (max-height: 520px) {
+  .author-board-pins { gap: 7px; padding: 10px 12px 6px }
+  .author-pin { padding-top: 12px }
+  .author-intro, .author-name-note { align-self: stretch; min-height: 0; width: 100% }
+  .author-photo { padding-bottom: 17px }
+  .author-logo-note { padding-top: 10px }
+  .author-pin p { line-height: 1.28 }
+  .author-note-link { min-height: 28px }
+  .author-board-close { width: 34px; height: 34px }
+}

@@ -159,13 +159,7 @@
 <div id="object-lettering" role="group" aria-label="Подписи к предметам"></div>
 <footer>
   <div class="workshop-footer">
-    <nav class="workshop-navigation" aria-label="Разделы мастерской">
-      <div class="dock">
-        <button type="button" id="browse" aria-expanded="false" aria-controls="catalog-menu"><span class="catalog-icon" aria-hidden="true"></span>Каталог</button>
-        <button type="button" data-open="contacts">Контакты</button>
-      </div>
-      <div id="catalog-menu" role="group" aria-label="Каталог мастерской" hidden></div>
-    </nav>
+    <div id="workshop-navigation"></div>
     <p class="workshop-signature">Мастерская Ивана · Москва, Россия</p>
   </div>
   <button type="button" id="room-switch" data-target="shelf" hidden><span id="room-switch-arrow" aria-hidden="true">→</span><span id="room-switch-label">К стеллажу</span></button>
@@ -232,6 +226,10 @@
   <p id="layout-status" role="status"></p>
 </aside>
 </main>
+<div id="research-screen"></div>
+<div id="contact-card-display"></div>
+<div id="author-board-display"></div>
+<div id="shelf-generator-display"></div>
 <div id="root"></div>
 <script type="module" src="/src/main.jsx"></script>
 </body>

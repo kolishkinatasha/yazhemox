@@ -1,7 +1,7 @@
 import * as T from 'three';
 import { SoftwareRenderer } from './software-renderer.js';
 import { buildWorkshop } from './workshop-room.js';
-import { exhibitNavigation, bindExhibitMenu } from './exhibit-navigation.js';
+import { exhibitNavigation, researchMonitorLayout } from './exhibit-navigation.js';
 import { loadRoomModels } from './product-models.js';
 import { createLayoutEditor } from './layout-editor.js';
 import { moscowSeason } from './workshop-calendar.js';
@@ -32,6 +32,17 @@ overviewCamera.lookAt(overviewTarget);
 overviewCamera.updateMatrixWorld();
 const brand = $('.brand');
 const workshopPage = $('#workshop');
+const exhibitSurfaces = {
+  generator: { host: $('#shelf-generator-display'), name: 'shelf-generator-sheet', fitX: .88, fitY: .83 },
+  about: { host: $('#author-board-display'), name: 'author-cork', fitX: .82, fitY: .81 },
+  engineering: { host: $('#research-screen'), name: 'research-display', fitX: .88, fitY: .80 },
+  contacts: { host: $('#contact-card-display'), name: 'contact-sheet', fitX: .86, fitY: .72 },
+};
+const roomUp = new T.Vector3(0, 1, 0);
+
+function focusedSurface() {
+  return researchMonitorLayout.matches ? exhibitSurfaces[current] : undefined;
+}
 const zoneView = $('#zone-view'), zoneBack = $('#zone-back');
 const roomSwitch = $('#room-switch');
 const halos = createObjectHalos($('#object-halos'));
@@ -48,11 +59,22 @@ let overlayDirty = true;
 let overviewObjects, poster;
 let paintedSeason;
 let cameraSettings, cameraEffects, courtyardMaterial;
-bindExhibitMenu();
 function syncExhibit() {
   const id = exhibitNavigation.getSnapshot()?.id ?? null;
   if (id === current) return;
+  const previous = focusedSurface();
   current = id;
+  const surface = focusedSurface();
+  if (camera && (previous?.mesh || surface?.mesh)) {
+    if (previous?.mesh) restoreSurface(previous);
+    workshopPage.classList.toggle('surface-focused', Boolean(surface));
+    surface?.host.toggleAttribute('data-approaching', !reduce && !software);
+    const pose = surface ? surfacePose(surface, innerWidth, innerHeight) : roomPose(innerWidth, innerHeight);
+    const card = exhibitSurfaces.contacts;
+    const approachingCard = surface === card;
+    const cardCenter = approachingCard ? pose.target : previous === card ? card.mesh.localToWorld(new T.Vector3()) : null;
+    moveCamera(pose, cardCenter, approachingCard);
+  }
   setHelpOpen(false);
   highlightAction();
   overlayDirty = dirty = true;
@@ -82,6 +104,11 @@ function createRoom(backdrop) {
   $('#scene').append(renderer.domElement);
 
   const workshop = buildWorkshop(scene, backdrop);
+  for (const [id, surface] of Object.entries(exhibitSurfaces)) {
+    surface.mesh = workshop.exhibits[id].getObjectByName(surface.name);
+    surface.idleMap = surface.mesh.material.map;
+    surface.pins = surface.mesh.getObjectByName('author-pin-hardware');
+  }
   exhibitNavigation.setSceneExhibits(workshop.exhibits);
   ({ printer, pendant, cat, window: cityWindow, overviewObjects, poster } = workshop);
   courtyardMaterial = scene.getObjectByName('courtyard').material;
@@ -158,7 +185,25 @@ function resize() {
   updateRoomNavigation();
   const { clientWidth: width, clientHeight: height } = $('#scene');
   finishCameraMove();
-  applyRoomPose(layoutEditor?.active ? layoutEditor.pose(width, height) : roomPose(width, height), width, height);
+  const focused = focusedSurface();
+  workshopPage.classList.toggle('surface-focused', Boolean(focused));
+  const pose = focused ? surfacePose(focused, width, height)
+    : layoutEditor?.active ? layoutEditor.pose(width, height) : roomPose(width, height);
+  applyRoomPose(pose, width, height);
+  for (const surface of Object.values(exhibitSurfaces)) {
+    if (surface !== focused) restoreSurface(surface);
+    if (researchMonitorLayout.matches) {
+      const projection = surface === focused ? camera : new T.PerspectiveCamera(36, width / height, camera.near, camera.far);
+      if (surface !== focused) {
+        const framed = surfacePose(surface, width, height);
+        projection.position.copy(framed.position);
+        projection.up.copy(framed.up);
+        projection.lookAt(framed.target);
+      }
+      positionSurface(surface, width, height, projection);
+    }
+    showSurface(surface, surface.active || (researchMonitorLayout.matches ? surface.preview : null));
+  }
   if (cameraEffects) cameraEffects.resize(width, height, cameraSettings.settings.smoothing);
   else renderer.setSize(width, height);
   renderer.invalidate?.();
@@ -275,21 +320,123 @@ function fitZone(object, { center, size, direction, narrowDirection = direction,
 
 function currentRoomPose() {
   return {
-    position: camera.position.clone(), target: cameraTarget.clone(), fov: camera.fov, zoom: camera.zoom,
+    position: camera.position.clone(), target: cameraTarget.clone(), up: camera.up.clone(), fov: camera.fov, zoom: camera.zoom,
     offsetX: camera.view?.enabled ? camera.view.offsetX : 0,
     offsetY: camera.view?.enabled ? camera.view.offsetY : 0,
   };
 }
 
-function applyRoomPose({ position, target, fov, zoom = 1, offsetX = 0, offsetY = 0 }, width = innerWidth, height = innerHeight) {
+function applyRoomPose({ position, target, up = roomUp, orientation, fov, zoom = 1, offsetX = 0, offsetY = 0 }, width = innerWidth, height = innerHeight) {
   camera.aspect = width / height;
   camera.position.copy(position);
   cameraTarget.copy(target);
-  camera.lookAt(cameraTarget);
+  camera.up.copy(up);
+  if (orientation) camera.quaternion.copy(orientation);
+  else camera.lookAt(cameraTarget);
   camera.fov = fov;
   camera.zoom = zoom;
   if (offsetX || offsetY) camera.setViewOffset(width, height, offsetX, offsetY, width, height);
   else camera.clearViewOffset();
+}
+
+function surfacePose({ mesh, fitX, fitY }, width, height) {
+  const bounds = mesh.geometry.boundingBox;
+  const target = mesh.localToWorld(new T.Vector3(0, 0, bounds.max.z));
+  const outward = new T.Vector3(0, 0, 1).transformDirection(mesh.matrixWorld);
+  const up = new T.Vector3(0, 1, 0).transformDirection(mesh.matrixWorld);
+  const fov = 36;
+  const tangent = Math.tan(T.MathUtils.degToRad(fov / 2));
+  const scale = mesh.getWorldScale(new T.Vector3());
+  const distance = Math.max(bounds.max.x * scale.x / (width / height * fitX), bounds.max.y * scale.y / fitY) / tangent;
+  return { fov, up, target, position: target.clone().addScaledVector(outward, distance) };
+}
+
+function positionSurface({ mesh, host }, width, height, projection = camera) {
+  const { min, max } = mesh.geometry.boundingBox;
+  projection.updateMatrixWorld();
+  const a = mesh.localToWorld(new T.Vector3(min.x, max.y, max.z)).project(projection);
+  const b = mesh.localToWorld(new T.Vector3(max.x, min.y, max.z)).project(projection);
+  host.style.setProperty('--monitor-x', `${(a.x + 1) * width / 2}px`);
+  host.style.setProperty('--monitor-y', `${(1 - a.y) * height / 2}px`);
+  host.style.setProperty('--monitor-width', `${(b.x - a.x) * width / 2}px`);
+  host.style.setProperty('--monitor-height', `${(a.y - b.y) * height / 2}px`);
+  host.removeAttribute('data-approaching');
+}
+
+function updateDisplayTexture(texture, canvas) {
+  if (!texture) {
+    texture = new T.CanvasTexture(canvas);
+    texture.colorSpace = T.SRGBColorSpace;
+  } else {
+    texture.image = canvas;
+    texture.needsUpdate = true;
+  }
+  return texture;
+}
+
+function showSurface(surface, texture) {
+  const material = surface.mesh.material;
+  const map = texture || surface.idleMap;
+  if (material.map !== map) {
+    material.map = map;
+    material.toneMapped = !texture;
+    material.needsUpdate = true;
+  }
+  if (surface.pins) {
+    const positions = !texture ? null : texture === surface.active ? surface.activePins : surface.previewPins;
+    surface.pins.visible = Boolean(positions?.length);
+    if (positions?.length) {
+      const { min, max } = surface.mesh.geometry.boundingBox;
+      for (const [index, pin] of surface.pins.children.entries()) {
+        const point = positions[index];
+        pin.visible = Boolean(point);
+        if (point) {
+          pin.position.set(T.MathUtils.lerp(min.x, max.x, point.x), T.MathUtils.lerp(max.y, min.y, point.y), 0);
+        }
+      }
+    }
+  }
+  renderer.invalidate?.();
+  dirty = true;
+}
+
+export function setSurfacePreview(id, canvas, pinPositions) {
+  const surface = exhibitSurfaces[id];
+  surface.preview = updateDisplayTexture(surface.preview, canvas);
+  surface.previewPins = pinPositions;
+  if (surface.mesh && researchMonitorLayout.matches && !surface.active) {
+    showSurface(surface, surface.preview);
+  }
+}
+
+export function setSurfaceImage(id, canvas, pinPositions) {
+  const surface = exhibitSurfaces[id];
+  if (!surface.mesh || surface !== focusedSurface()) return;
+  surface.active = updateDisplayTexture(surface.active, canvas);
+  surface.activePins = pinPositions;
+  showSurface(surface, surface.active);
+  surface.host.setAttribute('data-textured', '');
+}
+
+function restoreSurface(surface) {
+  if (!surface.active) return;
+  showSurface(surface, researchMonitorLayout.matches ? surface.preview : null);
+  surface.active.dispose();
+  surface.active = null;
+  surface.host.removeAttribute('data-textured');
+}
+
+export function surfaceControlAt(screen, clientX, clientY) {
+  const surface = focusedSurface();
+  if (!surface?.active) return null;
+  pointer.set(clientX / innerWidth * 2 - 1, 1 - clientY / innerHeight * 2);
+  raycaster.setFromCamera(pointer, camera);
+  const uv = raycaster.intersectObject(surface.mesh, false)[0]?.uv;
+  if (!uv) return null;
+  const bounds = screen.getBoundingClientRect();
+  const target = document.elementFromPoint(bounds.x + uv.x * bounds.width, bounds.y + (1 - uv.y) * bounds.height);
+  const control = target?.closest('button, a');
+  return screen.contains(control) ? control : null;
 }
 
 function updateRoomNavigation() {
@@ -332,16 +479,38 @@ function setRoomZone(id) {
   focus.focus({ preventScroll: true });
   if (next === previous) return;
 
-  const pose = roomPose(innerWidth, innerHeight);
+  moveCamera(roomPose(innerWidth, innerHeight));
+}
+
+function moveCamera(pose, cardCenter = null, approachingCard = false) {
   if (reduce || software) {
+    finishCameraMove();
     applyRoomPose(pose);
+    const surface = focusedSurface();
+    if (surface) positionSurface(surface, innerWidth, innerHeight);
     overlayDirty = true;
     renderer.invalidate?.();
     dirty = true;
   } else {
+    const from = currentRoomPose();
     cameraMove = {
-      start: performance.now(), end: pose, from: currentRoomPose(),
+      start: performance.now(), end: pose, from, duration: cardCenter ? 1050 : 580,
     };
+    if (cardCenter) {
+      const startRotation = camera.quaternion.clone();
+      const endRotation = new T.Quaternion().setFromRotationMatrix(
+        new T.Matrix4().lookAt(pose.position, pose.target, pose.up ?? roomUp),
+      );
+      // Camera-local offsets keep the card in view as the camera tilts over the desk.
+      cameraMove.card = {
+        center: cardCenter,
+        approaching: approachingCard,
+        startRotation,
+        endRotation,
+        from: from.position.clone().sub(cardCenter).applyQuaternion(startRotation.clone().invert()),
+        to: pose.position.clone().sub(cardCenter).applyQuaternion(endRotation.clone().invert()),
+      };
+    }
     workshopPage.classList.add('camera-moving');
   }
 }
@@ -354,23 +523,38 @@ function finishCameraMove() {
 
 function updateCameraMove(time) {
   if (!cameraMove) return;
-  const { start, from, end } = cameraMove;
-  const progress = T.MathUtils.clamp((time - start) / 580, 0, 1);
+  const { start, from, end, duration, card } = cameraMove;
+  const progress = T.MathUtils.clamp((time - start) / duration, 0, 1);
   const fraction = T.MathUtils.smoothstep(progress, 0, 1);
   const lerp = T.MathUtils.lerp;
+  let position = from.position.clone().lerp(end.position, fraction);
+  let orientation;
+  if (card) {
+    orientation = card.startRotation.clone().slerp(card.endRotation, fraction);
+    // Move closer before most of the tilt so the camera stays below the ceiling.
+    const travel = card.approaching ? 1 - (1 - fraction) ** 2 : fraction ** 2;
+    position = card.from.clone().lerp(card.to, travel).applyQuaternion(orientation).add(card.center);
+  }
   applyRoomPose({
-    position: from.position.clone().lerp(end.position, fraction),
+    position,
+    orientation,
     target: from.target.clone().lerp(end.target, fraction),
+    up: from.up.clone().lerp(end.up ?? roomUp, fraction).normalize(),
     fov: lerp(from.fov, end.fov, fraction),
     zoom: lerp(from.zoom, end.zoom ?? 1, fraction),
     offsetX: lerp(from.offsetX, end.offsetX ?? 0, fraction),
     offsetY: lerp(from.offsetY, end.offsetY ?? 0, fraction),
   });
-  if (progress === 1) finishCameraMove();
+  if (progress === 1) {
+    finishCameraMove();
+    const surface = focusedSurface();
+    if (surface) positionSurface(surface, innerWidth, innerHeight);
+  }
 }
 
 function cameraFocus(settings) {
   if (!settings.blur) return 1;
+  if (focusedSurface()) return camera.position.distanceTo(cameraTarget);
   const { object, frame } = zones.get(activeRoomZone() ?? 'desk');
   camera.updateMatrixWorld();
   object.localToWorld(focusPoint.fromArray(frame.focus ?? frame.center));
@@ -457,7 +641,7 @@ function activateRoomObject(id) {
 }
 
 function pick(event) {
-  if (layoutEditor?.active || letteringEditor.active) return;
+  if (current || layoutEditor?.active || letteringEditor.active) return;
   activateRoomObject(intersect(event)?.userData.action);
 }
 
@@ -488,7 +672,7 @@ let finishSceneLoading = () => {
   setTimeout(() => loading.remove(), 350);
 };
 
-function animate(time=0){requestAnimationFrame(animate);if(document.hidden || (current && !dirty)){lastPrintFrame=time;return;}const dt=Math.max(0,Math.min(.25,(time-lastPrintFrame)/1000));lastPrintFrame=time;
+function animate(time=0){requestAnimationFrame(animate);if(document.hidden || (current && !dirty && !cameraMove)){lastPrintFrame=time;return;}const dt=Math.max(0,Math.min(.25,(time-lastPrintFrame)/1000));lastPrintFrame=time;
  updateCameraMove(time);
  const canPrint = printing && !current && !layoutEditor?.active;
  const zone = activeRoomZone();
@@ -564,11 +748,13 @@ $('#help-backdrop').onclick = $('#help-close').onclick = () => {
 };
 syncExhibit();
 addEventListener('resize',resize);
+researchMonitorLayout.addEventListener('change', resize);
 Promise.all([loadRoomModels(),loadEveningBackdrop()])
   .then(([,backdrop]) => createRoom(backdrop))
   .catch(error => {
     console.error(error);
     $('#scene-loading')?.remove();
     $('#scene-error').hidden = false;
+    for (const { host } of Object.values(exhibitSurfaces)) host.removeAttribute('data-approaching');
     exhibitNavigation.setSceneExhibits(null);
   });

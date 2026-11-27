@@ -1,4 +1,8 @@
 import { lazy, Suspense, useSyncExternalStore } from 'react'
+import ResearchMonitor, { useResearchMonitorLayout } from './ResearchMonitor.jsx'
+import AuthorBoard from './AuthorBoard.jsx'
+import ShelfGeneratorBoard from './ShelfGeneratorBoard.jsx'
+import ContactCard from './ContactCard.jsx'
 import ExhibitDialog from './ExhibitDialog.jsx'
 import { exhibitNavigation } from './workshop/exhibit-navigation.js'
 
@@ -7,6 +11,12 @@ const concept = new URLSearchParams(location.search).get('concept') || 'album'
 
 export default function App() {
   const exhibit = useSyncExternalStore(exhibitNavigation.subscribe, exhibitNavigation.getSnapshot)
+
+  const useMonitor = useResearchMonitorLayout()
+  if (exhibit?.id === 'engineering' && useMonitor) return <ResearchMonitor exhibit={exhibit} />
+  if (exhibit?.id === 'generator' && useMonitor) return <ShelfGeneratorBoard exhibit={exhibit} />
+  if (exhibit?.id === 'about' && useMonitor) return <AuthorBoard exhibit={exhibit} />
+  if (exhibit?.id === 'contacts' && useMonitor) return <ContactCard exhibits={exhibit.sceneExhibits} />
 
   if (exhibit?.id === 'firefly' && ['shelf', 'album', 'night'].includes(concept)) {
     return (

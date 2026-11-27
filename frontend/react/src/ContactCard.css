@@ -1,0 +1,156 @@
+.contact-card-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+}
+
+#contact-card-display:has(.contact-card:is([data-scene="unavailable"], [data-capture-error]):not(.contact-card-preview)) .contact-card-scrim {
+  background: #26190e50;
+}
+
+.contact-card {
+  --card-ink: #191917;
+  --card-secondary: #565550;
+  position: fixed;
+  z-index: 21;
+  left: var(--monitor-x, calc((100vw - min(86vw, 125vh)) / 2));
+  top: var(--monitor-y, calc((100vh - min(47.78vw, 69.44vh)) / 2));
+  width: var(--monitor-width, min(86vw, 125vh));
+  height: var(--monitor-height, min(47.78vw, 69.44vh));
+  display: grid;
+  grid-template-columns: minmax(0, 46fr) minmax(0, 54fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  column-gap: clamp(24px, 5.4vw, 76px);
+  padding: clamp(16px, 3.75vh, 38px) clamp(20px, 4vw, 57px) clamp(12px, 2.8vh, 24px);
+  overflow: hidden;
+  border: 1px solid #e7e7e4;
+  background: #fff;
+  color: var(--card-ink);
+  font: clamp(14px, 2.1vh, 20px)/1.45 Inter, Arial, sans-serif;
+}
+
+.contact-card-preview,
+.contact-card[data-scene="loading"],
+.contact-card[data-scene="ready"]:not([data-capture-error]) { opacity: 0 }
+
+.contact-card-preview { pointer-events: none }
+
+.contact-card-identity {
+  display: grid;
+  place-items: center start;
+  min-width: 0;
+}
+
+.contact-card-identity img {
+  display: block;
+  width: min(100%, 50vh, 420px);
+  height: auto;
+}
+
+.contact-card-close {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--card-secondary);
+}
+
+.contact-card-copy {
+  align-self: center;
+  min-width: 0;
+}
+
+.contact-card-copy h2 {
+  margin: 0 0 clamp(6px, 2vh, 20px);
+  font: 750 clamp(22px, 3.5vw, 48px)/1.04 Inter, Arial, sans-serif;
+  letter-spacing: -.052em;
+}
+
+.contact-card-copy h2:focus { outline: none }
+
+.contact-card-links {
+  display: grid;
+  justify-items: start;
+}
+
+.contact-card-links a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  color: inherit;
+  text-decoration: none;
+  line-height: 1.2;
+}
+
+.contact-card-links a:hover { text-decoration: underline }
+
+.contact-card-footer {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-width: 0;
+  padding-top: 4px;
+  border-top: 1px solid #a7a7a0;
+}
+
+.contact-card-footer p {
+  margin: 0;
+  color: var(--card-secondary);
+  font-size: clamp(11px, 1.6vh, 14px);
+  letter-spacing: .065em;
+  text-transform: uppercase;
+}
+
+.contact-card-social { display: flex }
+
+.contact-card-social a {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: inherit;
+}
+
+.contact-card-tooltip {
+  position: absolute;
+  z-index: 1;
+  right: 0;
+  bottom: calc(100% + 4px);
+  visibility: hidden;
+  padding: 7px 10px;
+  border-radius: 3px;
+  background: #232320;
+  color: #fff;
+  font: 500 13px/1.25 Inter, Arial, sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.contact-card-social a:is(:focus-visible, [data-card-hover], [data-monitor-focus]) .contact-card-tooltip,
+.contact-card[data-capture-error] .contact-card-social a:hover .contact-card-tooltip,
+.contact-card[data-scene="unavailable"] .contact-card-social a:hover .contact-card-tooltip {
+  visibility: visible;
+}
+
+.contact-card-social:has([data-card-hover]) a:not([data-card-hover]) .contact-card-tooltip {
+  visibility: hidden;
+}
+
+.contact-card svg { flex: none }
+
+.contact-card :is(a, button):hover,
+.contact-card [data-card-hover] { background: #18181312 }
+
+.contact-card :is(a, button):focus-visible,
+.contact-card [data-monitor-focus] {
+  outline: 2px solid #343431;
+  outline-offset: -2px;
+  box-shadow: inset 0 0 0 2px #343431;
+}

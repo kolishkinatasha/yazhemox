@@ -128,6 +128,34 @@ function technicalSketch(ctx, x, y, w, h, ink) {
   ctx.stroke();
 }
 
+function addPinHardware(cork) {
+  const pins = new T.Group();
+  pins.name = 'author-pin-hardware';
+  pins.visible = false;
+  cork.add(pins);
+  const shaft = new T.CylinderGeometry(.007, .009, .019, 12);
+  shaft.rotateX(Math.PI / 2);
+  const cap = new T.SphereGeometry(.015, 16, 10);
+  cap.scale(1, 1, .42);
+  const shadow = new T.CircleGeometry(.021, 18);
+  shadow.scale(1, .72, 1);
+  const shade = new T.MeshBasicMaterial({ color: '#352313', transparent: true, opacity: .24, depthWrite: false });
+  const metal = material('#9a8873', .32);
+  for (const color of ['#86372d', '#e2c5a0', '#734c2e', '#3d564b', '#963b33', '#e6cca5']) {
+    const pin = new T.Group();
+    pins.add(pin);
+    const shadowMesh = new T.Mesh(shadow, shade);
+    shadowMesh.position.set(.009, -.008, .002);
+    pin.add(shadowMesh);
+    const post = new T.Mesh(shaft, metal);
+    post.position.z = .010;
+    pin.add(post);
+    const head = new T.Mesh(cap, material(color, .26));
+    head.position.z = .022;
+    pin.add(head);
+  }
+}
+
 function addPinboard(scene, x) {
   const board = group(scene, x, 4.59, backWall + .035);
   const frame = material('#dfc5a8');
@@ -196,7 +224,11 @@ function addPinboard(scene, x) {
       ctx.restore();
     });
   });
-  mesh(board, new T.PlaneGeometry(2.69, 1.67), new T.MeshStandardMaterial({ map, roughness: 1 }), 0, 0, .046);
+  const cork = mesh(board, new T.PlaneGeometry(2.69, 1.67), new T.MeshBasicMaterial({ map }), 0, 0, .046);
+  cork.name = 'author-cork';
+  cork.castShadow = false;
+  cork.geometry.computeBoundingBox();
+  addPinHardware(cork);
   return board;
 }
 
@@ -313,7 +345,10 @@ function addMonitor(desk) {
   }
   housing.computeVertexNormals();
   mesh(pc, housing, black, 0, .94, 0);
-  mesh(pc, screen, new T.MeshBasicMaterial({ map }), 0, .95, 0).castShadow = false;
+  const display = mesh(pc, screen, new T.MeshBasicMaterial({ map }), 0, .95, 0);
+  display.castShadow = false;
+  display.name = 'research-display';
+  screen.computeBoundingBox();
   const status = new T.MeshStandardMaterial({
     color: '#6d887d', roughness: .45, emissive: '#66998c', emissiveIntensity: .52,
   });
@@ -671,8 +706,11 @@ function addDrawingStand(parent) {
   const panel = group(stand, 0, .024, .13);
   panel.rotation.x = -.21;
   box(panel, support, .91, .636, .025, 0, .318, 0);
-  const drawing = new T.MeshStandardMaterial({ map: texture(640, 440, shelfDrawing), roughness: .89 });
-  mesh(panel, new T.PlaneGeometry(.886, .61), drawing, 0, .318, .014);
+  const drawing = new T.MeshBasicMaterial({ map: texture(640, 440, shelfDrawing) });
+  const drawingFace = mesh(panel, new T.PlaneGeometry(.886, .61), drawing, 0, .318, .014);
+  drawingFace.name = 'shelf-generator-sheet';
+  drawingFace.castShadow = false;
+  drawingFace.geometry.computeBoundingBox();
   rod(stand, support, [0, .02, -.135], [0, .40, .035], .013);
   return stand;
 }
@@ -1097,9 +1135,9 @@ export function buildWorkshop(scene, backdrop) {
   const pendant = addSuspendedPendant(pendantAnchor, register);
 
   const folder = register(group(desk, 2.61, worktop, .36, -.08), 'desk-folder', 'Визитки мастерской', 'desk');
-  box(folder, material('#706c59'), .89, .035, .60, 0, .018, 0);
-  for (let i = 0; i < 3; i++) box(folder, paper, .79, .009, .54, .016 * i, .04 + i * .009, .015);
-  const sheetMap = texture(512, 344, (ctx, w, h) => {
+  box(folder, material('#706c59'), .86, .035, .50, 0, .018, 0);
+  for (let i = 0; i < 3; i++) box(folder, paper, .79, .009, .446, .016 * i, .04 + i * .009, .015);
+  const sheetMap = texture(540, 300, (ctx, w, h) => {
     ctx.fillStyle = '#eae1d2';
     ctx.fillRect(0, 0, w, h);
     ctx.fillStyle = '#783f30';
@@ -1111,9 +1149,13 @@ export function buildWorkshop(scene, backdrop) {
     ctx.font = 'bold 33px sans-serif';
     ctx.fillText('Иван Чубатов', 31, 220);
     ctx.font = '24px sans-serif';
-    ctx.fillText('@yazhemoh', 32, 286);
+    ctx.fillText('@yazhemoh', 32, 267);
   });
-  mesh(folder, new T.PlaneGeometry(.77, .52), new T.MeshStandardMaterial({ map: sheetMap }), .032, .064, .015).rotation.x = -Math.PI / 2;
+  const contactSheet = mesh(folder, new T.PlaneGeometry(.774, .43), new T.MeshBasicMaterial({ map: sheetMap }), .032, .064, .015);
+  contactSheet.name = 'contact-sheet';
+  contactSheet.rotation.x = -Math.PI / 2;
+  contactSheet.castShadow = false;
+  contactSheet.geometry.computeBoundingBox();
   const pencilHolder = createProduct('pencil-holder', .35);
   pencilHolder.position.set(-.93, worktop, -.55);
   pencilHolder.rotation.y = .26;
@@ -1200,7 +1242,7 @@ export function buildWorkshop(scene, backdrop) {
       { id: 'printer', object: printer.root, title: '3D ПЕЧАТЬ', edge: [[-.62, .54, -.35], [-.62, 1.83, -.35]], views: [null, 'desk'] },
       { id: 'engineering', object: monitor, title: 'Исследования', edge: [[-1.33, 1.50, .24], [1.33, 1.50, .24]], at: .77, views: [null, 'desk'] },
       { id: 'pendant', object: pendant.object, title: 'Кулон', edge: [[-.14, -.25, 0], [-.14, .26, 0]], rotation: -Math.PI / 2, views: [null, 'desk'] },
-      { id: 'contacts', key: 'projects', object: folder, title: 'Контакты', edge: [[-.42, .04, .30], [.42, .04, .30]], side: 1, views: [null, 'desk'] },
+      { id: 'contacts', key: 'projects', object: folder, title: 'Контакты', edge: [[-.42, .04, .25], [.42, .04, .25]], side: 1, views: [null, 'desk'] },
       { id: 'desk', object: desk, title: 'Рабочий стол', edge: [[-3.1, 1.77, 1.17], [3.1, 1.77, 1.17]], at: .56, side: 1, views: [null] },
       { id: 'portfolio', key: 'hyperline', object: table, title: 'Hyperline', rim: { radius: [.415, .651], elevation: 1.252, gap: 9 }, views: [null, 'desk'] },
       { id: 'cat', object: cat.object, title: 'Погладить кота', edge: [[-.3, -.14, -.44], [.3, -.14, -.44]], side: 1, rotation: 0, views: [null, 'desk'] },

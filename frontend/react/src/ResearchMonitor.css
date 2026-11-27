@@ -1,0 +1,162 @@
+.surface-focused > :is(header, footer),
+.surface-focused :is(#object-lettering, #object-halos, #zone-view) {
+  visibility: hidden;
+}
+
+.research-monitor-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  background: transparent;
+}
+
+.research-monitor {
+  --monitor-fg: #e6edf5;
+  --monitor-muted: #a8b8cd;
+  --monitor-accent: #9bdcd0;
+  --monitor-line: #35485d;
+  position: fixed;
+  z-index: 21;
+  left: var(--monitor-x, 8vw);
+  top: var(--monitor-y, 15vh);
+  width: var(--monitor-width, 84vw);
+  height: var(--monitor-height, 70vh);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid #4a637b;
+  background: linear-gradient(150deg, #203446, #131e2c 70%);
+  color: var(--monitor-fg);
+  font: 14px/1.5 Inter, Arial, sans-serif;
+}
+
+.research-monitor[data-scene="loading"],
+.research-monitor[data-scene="ready"]:not([data-capture-error]) { opacity: 0 }
+
+#research-screen:has(.research-monitor:is([data-scene="unavailable"], [data-capture-error]):not(.research-monitor-preview)) .research-monitor-scrim {
+  background: #090e1545;
+}
+
+.research-monitor-preview {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.research-monitor-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: 14px 4px;
+  border-bottom: 1px solid var(--monitor-line);
+  background: #101a27;
+  color: var(--monitor-accent);
+  font: 13px/1.3 "PT Mono", Consolas, monospace;
+}
+
+.research-monitor-bar :is(button, span) { display: flex; align-items: center; gap: 8px }
+.research-monitor-bar button { min-width: 44px; min-height: 44px; justify-content: center }
+.research-monitor-bar button:first-child:not(:last-child) { padding-inline: 6px 10px }
+
+.research-monitor-scroll {
+  min-width: 0;
+  overscroll-behavior: contain;
+  overflow: auto;
+  scrollbar-color: #60788f #182635;
+  padding: clamp(14px, 2vw, 30px);
+}
+
+.research-monitor h2 { color: var(--monitor-fg); margin: 0; font-size: clamp(21px, 2.25vw, 32px); line-height: 1.15 }
+.research-monitor h2:focus { outline: none }
+.research-monitor-intro { max-width: 72ch; margin: 8px 0 16px; color: var(--monitor-muted) }
+
+.research-monitor-grid,
+.research-monitor-list {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.research-monitor-grid button,
+.research-monitor-list a {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 53px;
+  width: 100%;
+  padding: 8px 11px;
+  border: 1px solid var(--monitor-line);
+  border-radius: 3px;
+  background: #1a2b3c;
+  color: var(--monitor-fg);
+  text-align: left;
+  text-decoration: none;
+  line-height: 1.35;
+}
+
+.research-monitor :is(button, a):hover,
+.research-monitor [data-monitor-hover] { background-color: #2a4054 }
+.research-monitor :is(button, a):focus-visible,
+.research-monitor [data-monitor-focus] {
+  outline: 2px solid var(--monitor-accent);
+  outline-offset: -2px;
+  box-shadow: inset 0 0 0 2px var(--monitor-accent);
+}
+.research-monitor svg { flex: none; color: var(--monitor-accent) }
+.research-monitor :is(.research-monitor-grid, .research-monitor-list) span { flex: 1 }
+.research-monitor small { display: block; margin-top: 2px; color: var(--monitor-muted); font-size: 12px }
+
+.research-monitor-section { margin-top: 17px; max-width: 76ch }
+.research-monitor-section h2 { font-size: 17px }
+.research-monitor-section p { margin: 4px 0 0; color: var(--monitor-muted) }
+
+.research-monitor-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 44fr) minmax(0, 56fr);
+  min-height: 0;
+}
+
+.research-monitor-gallery {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  min-height: 0;
+  padding: 16px clamp(12px, 1.8vw, 24px) 7px;
+  border-right: 1px solid var(--monitor-line);
+}
+
+.research-monitor-gallery h2 { font-size: clamp(17px, 1.75vw, 24px) }
+
+.research-monitor-figure {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 0;
+  margin: 0;
+}
+
+.research-monitor-image {
+  position: relative;
+  background: #0e1721;
+}
+
+.research-monitor-image img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  margin: auto;
+}
+
+.research-monitor-figure figcaption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--monitor-muted);
+}
+
+.research-monitor-figure button { flex: 0 0 44px; min-height: 44px }

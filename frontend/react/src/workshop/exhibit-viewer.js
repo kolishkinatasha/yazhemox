@@ -6,7 +6,7 @@ import { buildShelf } from './shelf-preview.js';
 const products = new Set(['table','lamp','pendant','pencil-holder']);
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
-export function createExhibitViewer(host, hint) {
+export function createExhibitViewer(host, hint, { texturePreview = false } = {}) {
   let renderer, scene, camera, pivot, exhibits, kind, dimensions, model, ticket=0;
   let resizeObserver, environment;
   const events=new AbortController();
@@ -22,6 +22,7 @@ export function createExhibitViewer(host, hint) {
     camera.lookAt(0,0,0);
     camera.updateProjectionMatrix();
     renderer.render(scene,camera);
+    if (texturePreview) host.dispatchEvent(new Event('surface-render', { bubbles: true }));
   }
   function resize() {
     if (!enabled || !renderer || !host.clientWidth || !host.clientHeight) return;
@@ -45,7 +46,7 @@ export function createExhibitViewer(host, hint) {
   }
   function schedule() {
     cancelAnimationFrame(frame);
-    if (!enabled || !model || reduceMotion.matches || document.hidden) return;
+    if (!enabled || !model || texturePreview || reduceMotion.matches || document.hidden) return;
     renderedAt=performance.now();
     function tick(time) {
       if (!enabled || document.hidden || reduceMotion.matches) return;
@@ -60,8 +61,12 @@ export function createExhibitViewer(host, hint) {
   }
   function init() {
     if(renderer) return;
-    try { renderer=new T.WebGLRenderer({antialias:true,alpha:true}); }
-    catch { renderer=new SoftwareRenderer(); software=true; }
+    if (texturePreview) {
+      renderer=new SoftwareRenderer(); software=true;
+    } else {
+      try { renderer=new T.WebGLRenderer({antialias:true,alpha:true}); }
+      catch { renderer=new SoftwareRenderer(); software=true; }
+    }
     renderer.setPixelRatio(Math.min(devicePixelRatio,2));
     scene=new T.Scene();
     if (!software) {
@@ -79,7 +84,7 @@ export function createExhibitViewer(host, hint) {
       scene.environment=environment.texture;
       pmrem.dispose();
       for(const panel of studio.children) {panel.geometry.dispose(); panel.material.dispose();}
-    } else scene.background=new T.Color('#dce0d5');
+    } else scene.background=new T.Color(texturePreview ? '#203949' : '#dce0d5');
     camera=new T.PerspectiveCamera(37,1,.05,50);
     scene.add(new T.HemisphereLight('#fff3dd','#667666',2.6));
     const light=new T.DirectionalLight('#fff5de',3.4); light.position.set(-2,3,4); scene.add(light);

@@ -3,10 +3,12 @@ import { photos } from './workshop-photos.js'
 import { research } from './workshop-research.js'
 import { shelfDefaults, shelfFields } from './shelf-preview.js'
 
-const researchPhotos = [
+export const researchPhotos = [
   { src: 'media/research/mesh-before.webp', caption: 'Сетка для расчёта эксперимента', alt: 'Конечно-элементная сетка испытательной камеры из автореферата, рисунок 7' },
   { src: 'media/research/mesh-after.webp', caption: 'После двенадцатого этапа нагнетания', alt: 'Деформированная конечно-элементная сетка из автореферата, рисунок 9' },
 ]
+
+export const researchMonitorLayout = matchMedia('(min-width: 760px) and (min-height: 420px)')
 
 const listeners = new Set()
 let snapshot = null
@@ -98,61 +100,4 @@ export const exhibitNavigation = {
     sceneExhibits = exhibits
     if (snapshot) publish({ ...snapshot, sceneExhibits })
   },
-}
-
-export function bindExhibitMenu() {
-  const menu = document.querySelector('#catalog-menu')
-  const browse = document.querySelector('#browse')
-
-  function setOpen(open) {
-    menu.hidden = !open
-    browse.setAttribute('aria-expanded', String(open))
-  }
-
-  const groups = [
-    ['Предметы', ['portfolio', 'firefly', 'pendant', 'generator']],
-    ['Печать и макеты', ['printer', 'prototypes']],
-    ['Исследования и автор', ['engineering', 'about']],
-  ]
-
-  function makeButton(id) {
-    const entry = catalogue[id]
-    const button = document.createElement('button')
-    button.type = 'button'
-    button.dataset.open = id
-    button.textContent = entry.title
-    return button
-  }
-
-  for (const [title, ids] of groups) {
-    const section = document.createElement('section')
-    section.className = 'catalog-group'
-    const heading = document.createElement('h2')
-    heading.textContent = title
-    section.append(heading, ...ids.map(makeButton))
-    menu.append(section)
-  }
-
-  browse.addEventListener('click', event => {
-    setOpen(menu.hidden)
-    if (!menu.hidden && event.detail === 0) menu.querySelector('button')?.focus()
-  })
-  document.querySelector('#workshop').addEventListener('click', event => {
-    const button = event.target.closest('button[data-open]')
-    if (!button) return
-    if (menu.contains(button)) browse.focus()
-    setOpen(false)
-    exhibitNavigation.open(button.dataset.open)
-  })
-  document.addEventListener('click', event => {
-    if (!menu.contains(event.target) && !browse.contains(event.target)) setOpen(false)
-  })
-  document.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && !menu.hidden) {
-      event.preventDefault()
-      event.stopImmediatePropagation()
-      setOpen(false)
-      browse.focus()
-    }
-  }, true)
 }
